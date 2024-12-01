@@ -7,7 +7,11 @@ redirect_from:
   - /en/docs/api/ui
 ---
 
+<<<<<<< HEAD
 自定义滚动条的容器。
+=======
+Custom scroll bar container.
+>>>>>>> x6/master
 
 <iframe src="/demos/api/ui/scrollbox/basic"></iframe>
 
@@ -40,6 +44,7 @@ import '@antv/x6-react-components/es/scroll-box/style/index.css'
 
 ## ScrollBox
 
+<<<<<<< HEAD
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | containerClassName | 容器样式名 | string | - |
@@ -64,3 +69,29 @@ import '@antv/x6-react-components/es/scroll-box/style/index.css'
 | onScrollStart | 滚动条开始滚动时的回调函数 | (scrollLeft: number, scrollTop: number) => void | - |
 | onScroll | 滚动条滚动时的回调函数 | (scrollLeft: number, scrollTop: number) => void | - |
 | onScrollEnd | 滚动条结束滚动时的回调函数 | (scrollLeft: number, scrollTop: number) => void | - |
+=======
+| Parameter | Description | Type | Default Value |
+| --- | --- | --- | --- |
+| containerClassName | Container style class name | string | - |
+| contentClassName | Content style class name | string | - |
+| containerStyle | Container style | CSSProperties | - |
+| contentStyle | Content style | CSSProperties | - |
+| containerWidth | Container width | number | - |
+| containerHeight | Container height | number | - |
+| contentWidth | Content width | number | - |
+| contentHeight | Content height | number | - |
+| scrollTop | Position of the vertical scrollbar | number | `0` |
+| scrollLeft | Position of the horizontal scrollbar | number | `0` |
+| dragable | Whether the scrollbar position can be changed by dragging the content | boolean | `true` |
+| touchable | Whether touch events are supported | boolean | `true` |
+| scrollbarAutoHide | Whether to automatically hide the scrollbar | boolean | `true` |
+| scrollbarSize | Size of the scrollbar (height of the horizontal scrollbar, width of the vertical scrollbar) | number | `4` |
+| miniThumbSize | Minimum size of the scrollbar thumb | number | `16` |
+| keyboardScrollAmount | Amount of scroll per key press when using keyboard arrow keys | number | `40` |
+| zIndex |  | number | - |
+| onVerticalScroll | Callback function when the vertical scrollbar is scrolled | (scrollTop: number) => void | - |
+| onHorizontalScroll | Callback function when the horizontal scrollbar is scrolled | (scrollLeft: number) => void | - |
+| onScrollStart | Callback function when scrolling starts | (scrollLeft: number, scrollTop: number) => void | - |
+| onScroll | Callback function during scrolling | (scrollLeft: number, scrollTop: number) => void | - |
+| onScrollEnd | Callback function when scrolling ends | (scrollLeft: number, scrollTop: number) => void | - |
+>>>>>>> x6/master

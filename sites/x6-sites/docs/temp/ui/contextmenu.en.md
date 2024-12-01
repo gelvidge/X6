@@ -7,7 +7,11 @@ redirect_from:
   - /en/docs/api/ui
 ---
 
+<<<<<<< HEAD
 上下文菜单。
+=======
+Context Menu.
+>>>>>>> x6/master
 
 <iframe src="/demos/api/ui/contextmenu/basic"></iframe>
 
@@ -44,6 +48,7 @@ const menu = (
 
 ## ContextMenu
 
+<<<<<<< HEAD
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | className | 自定义的样式名 | string | - |
@@ -54,3 +59,15 @@ const menu = (
 | visible | 菜单是否显示 | boolean | `false` |
 | getPopupContainer | 菜单渲染父节点。默认渲染到 body 上，如果你遇到菜单滚动定位问题，试试修改为滚动的区域，并相对其定位。 | (triggerNode: Element) => HTMLElement | - |
 | onVisibleChange | 菜单显示状态改变时调用 | (visible?: boolean) => void | - |
+=======
+| Parameter | Description | Type | Default Value |
+| --- | --- | --- | --- |
+| className | Custom style name | string | - |
+| menu | Menu [Menu](/en/docs/api/ui/menu) component | Menu | - |
+| overlayClassName | Class name for the dropdown root element | string | - |
+| overlayStyle | Style for the dropdown root element | CSSProperties | - |
+| disabled | Whether the menu is disabled | boolean | `false` |
+| visible | Whether the menu is displayed | boolean | `false` |
+| getPopupContainer | The parent node for rendering the menu. By default, it renders to the body. If you encounter positioning issues with scrolling, try changing it to the scrolling area and positioning it relative to that. | (triggerNode: Element) => HTMLElement | - |
+| onVisibleChange | Called when the visibility state of the menu changes | (visible?: boolean) => void | - |
+>>>>>>> x6/master

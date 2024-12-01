@@ -48,7 +48,11 @@ declare module '@antv/x6/lib/graph/graph' {
 }
 
 declare module '@antv/x6/lib/graph/events' {
+<<<<<<< HEAD
   //    type EventArgs = SelectionImpl.SelectionEventArgs;
+=======
+  interface EventArgs extends SelectionImpl.SelectionEventArgs {}
+>>>>>>> x6/master
 }
 
 Graph.prototype.isSelectionEnabled = function () {
@@ -294,7 +298,10 @@ Graph.prototype.select = function (
   cells: Cell | string | (Cell | string)[],
   options?: Selection.AddOptions,
 ) {
+<<<<<<< HEAD
   console.log('SELECT')
+=======
+>>>>>>> x6/master
   const selection = this.getPlugin('selection') as Selection
   if (selection) {
     selection.select(cells, options)
@@ -308,7 +315,11 @@ Graph.prototype.unselect = function (
 ) {
   const selection = this.getPlugin('selection') as Selection
   if (selection) {
+<<<<<<< HEAD
     return selection.unselect(cells, options)
+=======
+    selection.unselect(cells, options)
+>>>>>>> x6/master
   }
   return this
 }

@@ -700,6 +700,10 @@ export class Edge<
     options.translateBy = options.translateBy || this.id
     options.tx = tx
     options.ty = ty
+<<<<<<< HEAD
+=======
+
+>>>>>>> x6/master
     return this.applyToPoints(
       (p) => ({
         x: (p.x || 0) + tx,

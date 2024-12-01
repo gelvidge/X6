@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import {
   defineComponent,
   h,
@@ -7,6 +8,9 @@ import {
   markRaw,
   Fragment,
 } from 'vue-demi'
+=======
+import { defineComponent, h, reactive, isVue3, Teleport, markRaw, Fragment } from 'vue-demi'
+>>>>>>> x6/master
 import { Graph } from '@antv/x6'
 import { VueShape } from './node'
 
@@ -23,10 +27,14 @@ export function connect(
   if (active) {
     items[id] = markRaw(
       defineComponent({
+<<<<<<< HEAD
         render: () =>
           h(Teleport, { to: container } as any, [
             h(component, { node, graph }),
           ]),
+=======
+        render: () => h(Teleport, { to: container } as any, [h(component, { node, graph })]),
+>>>>>>> x6/master
         provide: () => ({
           getNode: () => node,
           getGraph: () => graph,

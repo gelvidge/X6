@@ -17,6 +17,7 @@ import {
 
 export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   public readonly options: SelectionImpl.Options
+<<<<<<< HEAD
 
   protected readonly collection: Collection
 
@@ -36,6 +37,12 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
   protected boxCount: number
 
+=======
+  protected readonly collection: Collection
+  protected selectionContainer: HTMLElement
+  protected selectionContent: HTMLElement
+  protected boxCount: number
+>>>>>>> x6/master
   protected boxesUpdated: boolean
 
   public get graph() {
@@ -72,16 +79,24 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     }
 
     this.boxCount = 0
+<<<<<<< HEAD
     this.numCellsUpdated = 0
     this.notifyTranslate = true
+=======
+>>>>>>> x6/master
 
     this.createContainer()
     this.startListening()
   }
 
   protected startListening() {
+<<<<<<< HEAD
     const { graph } = this
     const { collection } = this
+=======
+    const graph = this.graph
+    const collection = this.collection
+>>>>>>> x6/master
 
     this.delegateEvents(
       {
@@ -92,13 +107,20 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     )
 
     graph.on('scale', this.onGraphTransformed, this)
+<<<<<<< HEAD
     graph.on('node:mouseup', this.endTranslate, this) // fires when dragging a node, fires on all selected nodes but not edges
     graph.on('edge:mouseup', this.endTranslate, this) // fires when dragging on edge, does not fire on all edges, does not fire on nodes
     graph.model.on('updated', this.onModelUpdated, this)
+=======
+    graph.on('translate', this.onGraphTransformed, this)
+    graph.model.on('updated', this.onModelUpdated, this)
+
+>>>>>>> x6/master
     collection.on('added', this.onCellAdded, this)
     collection.on('removed', this.onCellRemoved, this)
     collection.on('reseted', this.onReseted, this)
     collection.on('updated', this.onCollectionUpdated, this)
+<<<<<<< HEAD
     collection.on('edge:change:source', this.onCellPositionChanged, this) // note this will be a double event when dragging multiple cells
     collection.on('node:change:position', this.onCellPositionChanged, this)
     // collection.on('cell:changed', this.onCellChanged, this);
@@ -109,23 +131,43 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   protected stopListening() {
     const { graph } = this
     const { collection } = this
+=======
+    collection.on('node:change:position', this.onNodePositionChanged, this)
+    collection.on('cell:changed', this.onCellChanged, this)
+  }
+
+  protected stopListening() {
+    const graph = this.graph
+    const collection = this.collection
+>>>>>>> x6/master
 
     this.undelegateEvents()
 
     graph.off('scale', this.onGraphTransformed, this)
+<<<<<<< HEAD
 
     graph.off('node:moved', this.endTranslate, this)
     graph.off('edge:moved', this.endTranslate, this)
     graph.model.off('updated', this.onModelUpdated, this)
+=======
+    graph.off('translate', this.onGraphTransformed, this)
+    graph.model.off('updated', this.onModelUpdated, this)
+
+>>>>>>> x6/master
     collection.off('added', this.onCellAdded, this)
     collection.off('removed', this.onCellRemoved, this)
     collection.off('reseted', this.onReseted, this)
     collection.off('updated', this.onCollectionUpdated, this)
+<<<<<<< HEAD
     collection.off('edge:change:source', this.onCellPositionChanged, this)
     collection.off('node:change:position', this.onCellPositionChanged, this)
     // collection.off('cell:changed', this.onCellChanged, this); - this can be permantly removed
     collection.off('node:change:angle', this.onCellChanged, this)
     collection.off('node:change:size', this.onCellChanged, this)
+=======
+    collection.off('node:change:position', this.onNodePositionChanged, this)
+    collection.off('cell:changed', this.onCellChanged, this)
+>>>>>>> x6/master
   }
 
   protected onRemove() {
@@ -142,6 +184,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
   protected translating: boolean
 
+<<<<<<< HEAD
   protected onCellPositionChanged({
     cell,
     options,
@@ -175,6 +218,31 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
       const dy = current.y - previous.y
       if (dx !== 0 || dy !== 0) {
         this.translateSelectedNodes(dx, dy, cell, options)
+=======
+  protected onNodePositionChanged({
+    node,
+    options,
+  }: Collection.EventArgs['node:change:position']) {
+    const { showNodeSelectionBox, pointerEvents } = this.options
+    const { ui, selection, translateBy, snapped } = options
+
+    const allowTranslating =
+      (showNodeSelectionBox !== true || (pointerEvents && this.getPointerEventsValue(pointerEvents) === 'none')) &&
+      !this.translating &&
+      !selection
+
+    const translateByUi = ui && translateBy && node.id === translateBy
+
+    if (allowTranslating && (translateByUi || snapped)) {
+      this.translating = true
+      const current = node.position()
+      const previous = node.previous('position')!
+      const dx = current.x - previous.x
+      const dy = current.y - previous.y
+
+      if (dx !== 0 || dy !== 0) {
+        this.translateSelectedNodes(dx, dy, node, options)
+>>>>>>> x6/master
       }
       this.translating = false
     }
@@ -282,6 +350,10 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
   startSelecting(evt: Dom.MouseDownEvent) {
     // Flow: startSelecting => adjustSelection => stopSelecting
+<<<<<<< HEAD
+=======
+
+>>>>>>> x6/master
     evt = this.normalizeEvent(evt) // eslint-disable-line
     this.clean()
     let x
@@ -296,8 +368,13 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
       y = evt.offsetY
     } else {
       const offset = Dom.offset(graphContainer)
+<<<<<<< HEAD
       const { scrollLeft } = graphContainer
       const { scrollTop } = graphContainer
+=======
+      const scrollLeft = graphContainer.scrollLeft
+      const scrollTop = graphContainer.scrollTop
+>>>>>>> x6/master
       x = evt.clientX - offset.left + window.pageXOffset + scrollLeft
       y = evt.clientY - offset.top + window.pageYOffset + scrollTop
     }
@@ -324,7 +401,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   filter(cells: Cell[]) {
+<<<<<<< HEAD
     const { filter } = this.options
+=======
+    const filter = this.options.filter
+>>>>>>> x6/master
 
     return cells.filter((cell) => {
       if (Array.isArray(filter)) {
@@ -344,10 +425,16 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected stopSelecting(evt: Dom.MouseUpEvent) {
+<<<<<<< HEAD
     const { graph } = this
     const eventData = this.getEventData<EventData.Common>(evt)
     const { action } = eventData
 
+=======
+    const graph = this.graph
+    const eventData = this.getEventData<EventData.Common>(evt)
+    const action = eventData.action
+>>>>>>> x6/master
     switch (action) {
       case 'selecting': {
         let width = Dom.width(this.container)
@@ -358,9 +445,13 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         width /= scale.sx
         height /= scale.sy
         const rect = new Rectangle(origin.x, origin.y, width, height)
+<<<<<<< HEAD
         const cells = this.getCellViewsInArea(rect)
           .map((view) => view.cell)
           .filter((cell) => cell.hasParent() === false) // esnure that grouped (children) cells are not selected
+=======
+        const cells = this.getCellViewsInArea(rect).map((view) => view.cell)
+>>>>>>> x6/master
         this.reset(cells, { batch: true })
         this.hideRubberband()
         break
@@ -388,7 +479,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected onMouseUp(evt: Dom.MouseUpEvent) {
+<<<<<<< HEAD
     const { action } = this.getEventData<EventData.Common>(evt)
+=======
+    const action = this.getEventData<EventData.Common>(evt).action
+>>>>>>> x6/master
     if (action) {
       this.stopSelecting(evt)
       this.undelegateDocumentEvents()
@@ -413,10 +508,13 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.delegateDocumentEvents(Private.documentEvents, e.data)
   }
 
+<<<<<<< HEAD
   protected onSelectionBoxMouseUp(evt: Dom.MouseDownEvent) {
     // console.log('mouseup');
   }
 
+=======
+>>>>>>> x6/master
   protected startTranslating(evt: Dom.MouseDownEvent) {
     this.graph.model.startBatch('move-selection')
     const client = this.graph.snapToGrid(evt.clientX, evt.clientY)
@@ -430,7 +528,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   private getRestrictArea(): Rectangle.RectangleLike | null {
+<<<<<<< HEAD
     const { restrict } = this.graph.options.translating
+=======
+    const restrict = this.graph.options.translating.restrict
+>>>>>>> x6/master
     const area =
       typeof restrict === 'function'
         ? FunctionExt.call(restrict, this.graph, null)
@@ -494,6 +596,10 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     const strTop = Dom.css(elem, 'top')
     const left = strLeft ? parseFloat(strLeft) : 0
     const top = strTop ? parseFloat(strTop) : 0
+<<<<<<< HEAD
+=======
+
+>>>>>>> x6/master
     Dom.css(elem, 'left', left + dLeft)
     Dom.css(elem, 'top', top + dTop)
   }
@@ -507,12 +613,21 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         }
       } else {
         const scale = this.graph.transform.getScale()
+<<<<<<< HEAD
         for (let i = 0, len = this.$boxes.length; i < len; i += 1) {
           this.updateElementPosition(
             this.$boxes[i],
             dx * scale.sx,
             dy * scale.sy,
           )
+=======
+        for (
+          let i = 0, $boxes = this.$boxes, len = $boxes.length;
+          i < len;
+          i += 1
+        ) {
+          this.updateElementPosition($boxes[i], dx * scale.sx, dy * scale.sy)
+>>>>>>> x6/master
         }
         this.updateElementPosition(
           this.selectionContainer,
@@ -534,7 +649,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   protected adjustSelection(evt: Dom.MouseMoveEvent) {
     const e = this.normalizeEvent(evt)
     const eventData = this.getEventData<EventData.Common>(e)
+<<<<<<< HEAD
     const { action } = eventData
+=======
+    const action = eventData.action
+>>>>>>> x6/master
     switch (action) {
       case 'selecting': {
         const data = eventData as EventData.Selecting
@@ -591,6 +710,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.boxesUpdated = false
   }
 
+<<<<<<< HEAD
   protected endTranslate({ cell }) {
     if (this.collection.length <= 1) return
     console.log('endingTranslate', cell.id)
@@ -616,6 +736,8 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
   // })
 
+=======
+>>>>>>> x6/master
   protected translateSelectedNodes(
     dx: number,
     dy: number,
@@ -644,9 +766,13 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         excluded.push(currentCell)
       }
     }
+<<<<<<< HEAD
     this.totalDx += dx
     this.totalDy += dy
     // console.log('totalDx: ', this.totalDx, 'totalDy: ', this.totalDy);
+=======
+
+>>>>>>> x6/master
     this.collection.toArray().forEach((cell) => {
       if (!map[cell.id]) {
         const options = {
@@ -654,6 +780,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
           selection: this.cid,
           exclude: excluded,
         }
+<<<<<<< HEAD
         //cell.removeTools();
         Dom.translate(this.graph.findViewByCell(cell.id).container, dx, dy)
 
@@ -661,6 +788,12 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
           if (!map[edge.id]) {
             //  edge.translate(dx, dy, options);
             Dom.translate(this.graph.findViewByCell(edge.id).container, dx, dy)
+=======
+        cell.translate(dx, dy, options)
+        this.graph.model.getConnectedEdges(cell).forEach((edge) => {
+          if (!map[edge.id]) {
+            edge.translate(dx, dy, options)
+>>>>>>> x6/master
             map[edge.id] = true
           }
         })
@@ -669,7 +802,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected getCellViewsInArea(rect: Rectangle) {
+<<<<<<< HEAD
     const { graph } = this
+=======
+    const graph = this.graph
+>>>>>>> x6/master
     const options = {
       strict: this.options.strict,
     }
@@ -876,6 +1013,15 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     )
   }
 
+<<<<<<< HEAD
+=======
+  protected getPointerEventsValue(pointerEvents: 'none' | 'auto' | ((cells: Cell[]) => 'none' | 'auto')) {
+    return typeof pointerEvents === 'string'
+      ? pointerEvents
+      : pointerEvents(this.cells)
+  }
+
+>>>>>>> x6/master
   protected createSelectionBox(cell: Cell) {
     this.addCellSelectedClassName(cell)
 
@@ -888,6 +1034,10 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
         const className = this.boxClassName
         const box = document.createElement('div')
+<<<<<<< HEAD
+=======
+        const pointerEvents = this.options.pointerEvents
+>>>>>>> x6/master
         Dom.addClass(box, className)
         Dom.addClass(box, `${className}-${cell.isNode() ? 'node' : 'edge'}`)
         Dom.attr(box, 'data-cell-id', cell.id)
@@ -897,7 +1047,13 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
           top: bbox.y,
           width: bbox.width,
           height: bbox.height,
+<<<<<<< HEAD
           pointerEvents: this.options.pointerEvents || 'auto',
+=======
+          pointerEvents: pointerEvents
+            ? this.getPointerEventsValue(pointerEvents)
+            : 'auto',
+>>>>>>> x6/master
         })
         Dom.appendTo(box, this.container)
         this.showSelected()
@@ -917,10 +1073,22 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   confirmUpdate() {
     if (this.boxCount) {
       this.hide()
+<<<<<<< HEAD
       for (let i = 0, len = this.$boxes.length; i < len; i += 1) {
         const box = this.$boxes[i]
         const cellId = Dom.attr(box, 'data-cell-id')
         Dom.remove(box)
+=======
+      for (
+        let i = 0, $boxes = this.$boxes, len = $boxes.length;
+        i < len;
+        i += 1
+      ) {
+        const box = $boxes[i]
+        const cellId = Dom.attr(box, 'data-cell-id')
+        Dom.remove(box)
+        this.boxCount -= 1
+>>>>>>> x6/master
         const cell = this.collection.get(cellId)
         if (cell) {
           this.createSelectionBox(cell)
@@ -949,8 +1117,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected onReseted({ previous, current }: Collection.EventArgs['reseted']) {
+<<<<<<< HEAD
     this.totalDx = 0
     this.totalDy = 0
+=======
+>>>>>>> x6/master
     this.destroyAllSelectionBoxes(previous)
     current.forEach((cell) => {
       this.listenCellRemoveEvent(cell)
@@ -1016,6 +1187,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 }
 
 export namespace SelectionImpl {
+<<<<<<< HEAD
+=======
+  type SelectionEventType = 'leftMouseDown' | 'mouseWheelDown'
+
+>>>>>>> x6/master
   export interface CommonOptions {
     model?: Model
     collection?: Collection
@@ -1042,7 +1218,14 @@ export namespace SelectionImpl {
     rubberEdge?: boolean
 
     // Whether to respond event on the selectionBox
+<<<<<<< HEAD
     pointerEvents?: 'none' | 'auto'
+=======
+    pointerEvents?: 'none' | 'auto' | ((cells: Cell[]) => 'none' | 'auto')
+
+    // with which mouse button the selection can be started
+    eventTypes?: SelectionEventType[]
+>>>>>>> x6/master
   }
 
   export interface Options extends CommonOptions {
@@ -1068,9 +1251,15 @@ export namespace SelectionImpl {
     batch?: boolean
   }
 
+<<<<<<< HEAD
   export type AddOptions = Collection.AddOptions
 
   export type RemoveOptions = Collection.RemoveOptions
+=======
+  export interface AddOptions extends Collection.AddOptions {}
+
+  export interface RemoveOptions extends Collection.RemoveOptions {}
+>>>>>>> x6/master
 }
 
 export namespace SelectionImpl {

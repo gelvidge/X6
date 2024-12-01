@@ -18,9 +18,12 @@ export class NodeView<
 > extends CellView<Entity, Options> {
   protected portsCache: { [id: string]: NodeView.PortCache } = {}
 
+<<<<<<< HEAD
   protected totalDx = 0
   protected totalDy = 0
 
+=======
+>>>>>>> x6/master
   protected get [Symbol.toStringTag]() {
     return NodeView.toStringTag
   }
@@ -1121,8 +1124,11 @@ export class NodeView<
 
     data.moving = false
     data.embedding = false
+<<<<<<< HEAD
     // this.totalDx = 0;
     // this.totalDy = 0;
+=======
+>>>>>>> x6/master
   }
 
   // eslint-disable-next-line

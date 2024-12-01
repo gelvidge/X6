@@ -48,7 +48,10 @@ export class Graph extends Basecoat<EventArgs> {
 
   constructor(options: Partial<GraphOptions.Manual>) {
     super()
+<<<<<<< HEAD
     console.log('initiating 3')
+=======
+>>>>>>> x6/master
     this.options = GraphOptions.get(options)
     this.css = new Css(this)
     this.view = new GraphView(this)

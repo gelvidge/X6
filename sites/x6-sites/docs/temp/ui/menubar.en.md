@@ -7,7 +7,11 @@ redirect_from:
   - /en/docs/api/ui
 ---
 
+<<<<<<< HEAD
 菜单栏。
+=======
+Menu Bar.
+>>>>>>> x6/master
 
 <iframe src="/demos/api/ui/menubar/basic"></iframe>
 
@@ -33,6 +37,7 @@ import '@antv/x6-react-components/es/menubar/style/index.css'
 
 ## Menubar
 
+<<<<<<< HEAD
 | 参数      | 说明                 | 类型      | 默认值 |
 | --------- | -------------------- | --------- | ------ |
 | className | 自定义样式名         | string    | -      |
@@ -44,3 +49,16 @@ import '@antv/x6-react-components/es/menubar/style/index.css'
 | ------ | ---------- | ------- | ------ |
 | text   | 菜单项文本 | string  | -      |
 | hidden | 是否隐藏   | boolean | -      |
+=======
+| Parameter  | Description                     | Type      | Default Value |
+|------------|---------------------------------|-----------|---------------|
+| className  | Custom style name               | string    | -             |
+| extra      | Additional component on the right side of the menu bar | ReactNode | -             |
+
+## Menubar.Item
+
+| Parameter | Description       | Type    | Default Value |
+|-----------|-------------------|---------|---------------|
+| text      | Menu item text    | string  | -             |
+| hidden    | Whether to hide    | boolean | -             |
+>>>>>>> x6/master

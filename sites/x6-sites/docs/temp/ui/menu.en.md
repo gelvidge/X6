@@ -7,7 +7,11 @@ redirect_from:
   - /en/docs/api/ui
 ---
 
+<<<<<<< HEAD
 菜单组件。一般在 [Menubar](/en/docs/api/ui/menubar)、[ContextMenu](/en/docs/api/ui/contextmenu)、[Dropdown](/en/docs/api/ui/dropdown) 组件中使用。
+=======
+Menu component. Generally used in [Menubar](/en/docs/api/ui/menubar), [ContextMenu](/en/docs/api/ui/contextmenu), and [Dropdown](/en/docs/api/ui/dropdown) components.
+>>>>>>> x6/master
 
 <iframe src="/demos/api/ui/menu/basic"></iframe>
 
@@ -43,6 +47,7 @@ const Divider = Menu.Divider
 
 ## Menu
 
+<<<<<<< HEAD
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
 | className | 自定义的样式名 | string | - |
@@ -83,3 +88,45 @@ const Divider = Menu.Divider
 ## Menu.Divider
 
 菜单项分割线。
+=======
+| Parameter | Description | Type | Default Value |
+| --- | --- | --- | --- |
+| className | Custom style name | string | - |
+| hasIcon | Whether to include an Icon | boolean | `false` |
+| onClick | Function called when MenuItem is clicked | (name: string) => void | - |
+| registerHotkey | Register a hotkey | (hotkey: string, handler: () => void) => void | - |
+| unregisterHotkey | Unregister a hotkey | (hotkey: string, handler: () => void) => void | - |
+
+## Menu.Item
+
+| Parameter | Description | Type | Default Value |
+| --- | --- | --- | --- |
+| className | Custom style name | string | - |
+| name | Menu name (unique identifier), used in the Menu's `onClick` callback. If the `name` attribute is not set, `onClick` will not be called. | string | - |
+| icon | Menu icon | ReactNode | - |
+| text | Menu text | string | - |
+| hotkey | Menu hotkey | string | - |
+| active | Whether it is active (shows background on mouse hover) | boolean | `false` |
+| hidden | Whether it is hidden | boolean | `false` |
+| disabled | Whether it is disabled | boolean | `false` |
+| onClick | Function called when MenuItem is clicked | () => void | - |
+| children | Additional child components | ReactNode | - |
+
+## Menu.SubMenu
+
+| Parameter | Description | Type | Default Value |
+| --- | --- | --- | --- |
+| className | Custom style name | string | - |
+| name | Menu name (unique identifier), used in the Menu's `onClick` callback | string | - |
+| icon | Menu icon | ReactNode | - |
+| text | Menu text | string | - |
+| hotkey | Menu hotkey | string | - |
+| active | Whether it is active (shows background on mouse hover and sub-menu) | boolean | `false` |
+| hidden | Whether it is hidden | boolean | `false` |
+| disabled | Whether it is disabled | boolean | `false` |
+| onClick | Function called when MenuItem is clicked | () => void | - |
+
+## Menu.Divider
+
+Menu item divider.
+>>>>>>> x6/master

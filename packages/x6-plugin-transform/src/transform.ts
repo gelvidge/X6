@@ -13,6 +13,7 @@ import {
 
 export class TransformImpl extends View<TransformImpl.EventArgs> {
   private node: Node
+<<<<<<< HEAD
 
   private graph: Graph
 
@@ -22,6 +23,12 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
 
   protected prevShift: number
 
+=======
+  private graph: Graph
+  private options: TransformImpl.Options
+  protected handle: Element | null
+  protected prevShift: number
+>>>>>>> x6/master
   public container: HTMLElement
 
   protected get model() {
@@ -150,8 +157,13 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
     const transform = angle !== 0 ? `rotate(${angle}deg)` : ''
     Dom.css(this.container, {
       transform,
+<<<<<<< HEAD
       width: bbox.width + 2,
       height: bbox.height + 2,
+=======
+      width: bbox.width,
+      height: bbox.height,
+>>>>>>> x6/master
       left: bbox.x,
       top: bbox.y,
     })
@@ -295,8 +307,13 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
     let data = this.getEventData<EventData.Resizing | EventData.Rotating>(evt)
     if (data.action) {
       const e = this.normalizeEvent(evt)
+<<<<<<< HEAD
       let { clientX } = e
       let { clientY } = e
+=======
+      let clientX = e.clientX
+      let clientY = e.clientY
+>>>>>>> x6/master
 
       const scroller = this.graph.getPlugin<any>('scroller')
       const restrict = this.options.restrictedResizing
@@ -313,8 +330,13 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
 
       const pos = this.graph.snapToGrid(clientX, clientY)
       const gridSize = this.graph.getGridSize()
+<<<<<<< HEAD
       const { node } = this
       const { options } = this
+=======
+      const node = this.node
+      const options = this.options
+>>>>>>> x6/master
 
       if (data.action === 'resizing') {
         data = data as EventData.Resizing
@@ -362,7 +384,11 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
           }
         }
 
+<<<<<<< HEAD
         const { relativeDirection } = data
+=======
+        const relativeDirection = data.relativeDirection
+>>>>>>> x6/master
         if (
           options.allowReverse &&
           (rawWidth <= -width || rawHeight <= -height)
@@ -544,7 +570,11 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
     T extends Dom.EventObject,
   >(name: K, evt: T, view: NodeView, args: KeyValue = {}) {
     if (view) {
+<<<<<<< HEAD
       const { graph } = view
+=======
+      const graph = view.graph
+>>>>>>> x6/master
       const e = graph.view.normalizeEvent(evt) as any
       const localPoint = graph.snapToGrid(e.clientX, e.clientY)
 
@@ -569,8 +599,13 @@ export class TransformImpl extends View<TransformImpl.EventArgs> {
 }
 
 export namespace TransformImpl {
+<<<<<<< HEAD
   type ResizeEventArgs<E> = NodeView.PositionEventArgs<E>
   type RotateEventArgs<E> = NodeView.PositionEventArgs<E>
+=======
+  interface ResizeEventArgs<E> extends NodeView.PositionEventArgs<E> {}
+  interface RotateEventArgs<E> extends NodeView.PositionEventArgs<E> {}
+>>>>>>> x6/master
   export interface EventArgs {
     'node:resize': ResizeEventArgs<Dom.MouseDownEvent>
     'node:resizing': ResizeEventArgs<Dom.MouseMoveEvent>

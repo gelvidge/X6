@@ -42,7 +42,11 @@
     "vue-demi": "latest"
   },
   "peerDependencies": {
+<<<<<<< HEAD
     "@antv/x6": "../x6",
+=======
+    "@antv/x6": "^2.x",
+>>>>>>> x6/master
     "@vue/composition-api": "^1.0.0-rc.1",
     "vue": "^2.0.0 || >=3.0.0"
   },
@@ -52,7 +56,11 @@
     }
   },
   "devDependencies": {
+<<<<<<< HEAD
     "@antv/x6": "../x6",
+=======
+    "@antv/x6": "^2.x",
+>>>>>>> x6/master
     "vue": "^3.0.0"
   },
   "author": {

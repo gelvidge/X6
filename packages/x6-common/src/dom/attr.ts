@@ -9,6 +9,10 @@ export const CASE_SENSITIVE_ATTR = [
   'textLength',
   'lengthAdjust',
   'gradientUnits',
+<<<<<<< HEAD
+=======
+  'preserveAspectRatio'
+>>>>>>> x6/master
 ]
 
 export type Attributes = { [key: string]: string | number | null | undefined }

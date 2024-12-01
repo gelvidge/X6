@@ -1,5 +1,10 @@
 export const clearSelection = (function () {
+<<<<<<< HEAD
   if (typeof document == 'undefined') return function () {}
+=======
+  if (typeof document == 'undefined')
+    return function () {}
+>>>>>>> x6/master
   const doc = document as any
   if (doc.selection) {
     return function () {

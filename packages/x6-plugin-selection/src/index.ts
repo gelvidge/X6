@@ -3,7 +3,10 @@ import {
   ModifierKey,
   CssLoader,
   Dom,
+<<<<<<< HEAD
   ObjectExt,
+=======
+>>>>>>> x6/master
   Cell,
   EventArgs,
   Graph,
@@ -19,6 +22,7 @@ export class Selection
   public name = 'selection'
 
   private graph: Graph
+<<<<<<< HEAD
 
   private selectionImpl: SelectionImpl
 
@@ -26,6 +30,11 @@ export class Selection
 
   private movedMap = new WeakMap<Cell, boolean>()
 
+=======
+  private selectionImpl: SelectionImpl
+  private readonly options: Selection.Options
+  private movedMap = new WeakMap<Cell, boolean>()
+>>>>>>> x6/master
   private unselectMap = new WeakMap<Cell, boolean>()
 
   get rubberbandDisabled() {
@@ -46,11 +55,20 @@ export class Selection
 
   constructor(options: Selection.Options = {}) {
     super()
+<<<<<<< HEAD
     this.options = ObjectExt.merge(
       { enabled: true },
       Selection.defaultOptions,
       options,
     )
+=======
+    this.options = {
+      enabled: true,
+      ...Selection.defaultOptions,
+      ...options,
+    }
+
+>>>>>>> x6/master
     CssLoader.ensure(this.name, content)
   }
 
@@ -311,8 +329,12 @@ export class Selection
     this.graph.on('blank:mousedown', this.onBlankMouseDown, this)
     this.graph.on('blank:click', this.onBlankClick, this)
     this.graph.on('cell:mousemove', this.onCellMouseMove, this)
+<<<<<<< HEAD
     this.graph.on('cell:mousemoved', this.onCellMouseMoved, this)
     this.graph.on('cell:mousedown', this.onCellMouseDown, this)
+=======
+    this.graph.on('cell:mouseup', this.onCellMouseUp, this)
+>>>>>>> x6/master
     this.selectionImpl.on('box:mousedown', this.onBoxMouseDown, this)
   }
 
@@ -320,12 +342,23 @@ export class Selection
     this.graph.off('blank:mousedown', this.onBlankMouseDown, this)
     this.graph.off('blank:click', this.onBlankClick, this)
     this.graph.off('cell:mousemove', this.onCellMouseMove, this)
+<<<<<<< HEAD
     this.graph.off('cell:mousemoved', this.onCellMouseMoved, this)
     this.graph.off('cell:mousedown', this.onCellMouseDown, this)
+=======
+    this.graph.off('cell:mouseup', this.onCellMouseUp, this)
+>>>>>>> x6/master
     this.selectionImpl.off('box:mousedown', this.onBoxMouseDown, this)
   }
 
   protected onBlankMouseDown({ e }: EventArgs['blank:mousedown']) {
+<<<<<<< HEAD
+=======
+    if (!this.allowBlankMouseDown(e)) {
+      return
+    }
+
+>>>>>>> x6/master
     const allowGraphPanning = this.graph.panning.allowPanning(e, true)
     const scroller = this.graph.getPlugin<any>('scroller')
     const allowScrollerPanning = scroller && scroller.allowPanning(e, true)
@@ -337,6 +370,17 @@ export class Selection
     }
   }
 
+<<<<<<< HEAD
+=======
+  protected allowBlankMouseDown(e: Dom.MouseDownEvent) {
+    const eventTypes = this.options.eventTypes
+    return (
+      (eventTypes?.includes('leftMouseDown') && e.button === 0) ||
+      (eventTypes?.includes('mouseWheelDown') && e.button === 1)
+    )
+  }
+
+>>>>>>> x6/master
   protected onBlankClick() {
     this.clean()
   }
@@ -356,6 +400,7 @@ export class Selection
   }
 
   protected onCellMouseMove({ cell }: EventArgs['cell:mousemove']) {
+<<<<<<< HEAD
     // fires on all nodes that are moving
     // this.movedMap.set(cell, true);
   }
@@ -375,6 +420,14 @@ export class Selection
 
     const { options } = this
     let { disabled } = this
+=======
+    this.movedMap.set(cell, true)
+  }
+
+  protected onCellMouseUp({ e, cell }: EventArgs['cell:mouseup']) {
+    const options = this.options
+    let disabled = this.disabled
+>>>>>>> x6/master
     if (!disabled && this.movedMap.has(cell)) {
       disabled = options.selectCellOnMoved === false
 
@@ -388,17 +441,31 @@ export class Selection
     }
 
     if (!disabled) {
+<<<<<<< HEAD
       if (!e.ctrlKey && !this.isSelected(cell)) {
         this.graph.resetSelection(cell)
       } // ctrl not pressed, no parent and multiple cells not selected
       else if (e.ctrlKey && this.isSelected(cell)) {
         this.unselect(cell)
       } else if (e.ctrlKey && this.allowMultipleSelection(e)) {
+=======
+      if (!this.allowMultipleSelection(e)) {
+        this.reset(cell)
+      } else if (this.unselectMap.has(cell)) {
+        this.unselectMap.delete(cell)
+      } else if (this.isSelected(cell)) {
+        this.unselect(cell)
+      } else {
+>>>>>>> x6/master
         this.select(cell)
       }
     }
 
+<<<<<<< HEAD
     // this.movedMap.delete(cell);
+=======
+    this.movedMap.delete(cell)
+>>>>>>> x6/master
   }
 
   protected onBoxMouseDown({
@@ -467,7 +534,11 @@ export class Selection
 }
 
 export namespace Selection {
+<<<<<<< HEAD
   export type EventArgs = SelectionImpl.EventArgs
+=======
+  export interface EventArgs extends SelectionImpl.EventArgs {}
+>>>>>>> x6/master
   export interface Options extends SelectionImpl.CommonOptions {
     enabled?: boolean
   }
@@ -493,5 +564,9 @@ export namespace Selection {
     selectEdgeOnMoved: false,
     following: true,
     content: null,
+<<<<<<< HEAD
+=======
+    eventTypes: ['leftMouseDown', 'mouseWheelDown'],
+>>>>>>> x6/master
   }
 }
