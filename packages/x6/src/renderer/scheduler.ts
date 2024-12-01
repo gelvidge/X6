@@ -97,10 +97,7 @@ export class Scheduler extends Disposable {
     flush = true,
   ) {
     const id = view.cell.id
-<<<<<<< HEAD
 
-=======
->>>>>>> x6/master
     const viewItem = this.views[id]
 
     if (!viewItem) {
@@ -110,7 +107,6 @@ export class Scheduler extends Disposable {
     viewItem.flag = flag
     viewItem.options = options
 
-<<<<<<< HEAD
     const priorAction = view.hasAction(flag, [
       'translate',
       'resize',
@@ -118,9 +114,7 @@ export class Scheduler extends Disposable {
       'source',
       'target',
     ])
-=======
-    const priorAction = view.hasAction(flag, ['translate', 'resize', 'rotate'])
->>>>>>> x6/master
+
     if (priorAction || options.async === false) {
       priority = JOB_PRIORITY.PRIOR // eslint-disable-line
       flush = false // eslint-disable-line
@@ -441,10 +435,7 @@ export class Scheduler extends Disposable {
     const createViewHook = this.graph.options.createCellView
     if (createViewHook) {
       const ret = FunctionExt.call(createViewHook, this.graph, cell)
-<<<<<<< HEAD
 
-=======
->>>>>>> x6/master
       if (ret) {
         return new ret(cell, options) // eslint-disable-line new-cap
       }
