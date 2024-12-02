@@ -8,11 +8,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
-<<<<<<< HEAD
-    "noEmitOnError": false, //change back to true when happy - surpresses build errors
-=======
     "noEmitOnError": true,
->>>>>>> x6/master
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "resolveJsonModule": true,

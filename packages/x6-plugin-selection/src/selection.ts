@@ -602,12 +602,11 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
   protected endTranslate({ cell }) {
     if (this.collection.length <= 1) return
-    console.log('endingTranslate', cell.id)
+
     this.notifyTranslate = false
 
     this.collection.toArray().forEach((item) => {
       if (item.id !== cell.id) {
-        console.log('translating model', item.id, this.totalDx, this.totalDy)
         item.isEdge() &&
           Dom.translate(
             this.graph.findViewByCell(item.id).container,
@@ -666,7 +665,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
           exclude: excluded,
         }
 
-        //cell.removeTools();
         Dom.translate(this.graph.findViewByCell(cell.id).container, dx, dy)
 
         this.graph.model.getConnectedEdges(cell).forEach((edge) => {
