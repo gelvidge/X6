@@ -39,7 +39,6 @@
     "pretest": "rss"
   },
   "peerDependencies": {
-<<<<<<< HEAD
     "@antv/x6": "../x6",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
@@ -48,18 +47,6 @@
     "@antv/x6": "link:..\\x6",
     "@types/react": ">=18.0.0",
     "@types/react-dom": ">=18.0.0"
-=======
-    "@antv/x6": "^2.x",
-    "react": ">=18.0.0",
-    "react-dom": ">= 18.0.0"
-  },
-  "devDependencies": {
-    "@antv/x6": "^2.x",
-    "@types/react": "^18.0.25",
-    "@types/react-dom": "^18.0.9",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
->>>>>>> x6/master
   },
   "author": {
     "name": "bubkoo",

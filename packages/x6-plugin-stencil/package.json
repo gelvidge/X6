@@ -39,7 +39,6 @@
     "pretest": "rss"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@antv/x6-plugin-dnd": "../x6-plugin-dnd"
   },
   "peerDependencies": {
@@ -48,16 +47,6 @@
   "devDependencies": {
     "@antv/x6": "../x6",
     "@antv/x6-plugin-dnd": "../x6-plugin-dnd"
-=======
-    "@antv/x6-plugin-dnd": "^2.x"
-  },
-  "peerDependencies": {
-    "@antv/x6": "^2.x"
-  },
-  "devDependencies": {
-    "@antv/x6": "^2.x",
-    "@antv/x6-plugin-dnd": "^2.0.x"
->>>>>>> x6/master
   },
   "author": {
     "name": "bubkoo",

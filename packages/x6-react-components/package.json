@@ -50,13 +50,8 @@
   ],
   "peerDependencies": {
     "antd": ">=4.4.2 || >=5.0.0",
-<<<<<<< HEAD
     "react": "18.3.1",
     "react-dom": "18.3.1"
-=======
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
->>>>>>> x6/master
   },
   "dependencies": {
     "clamp": "^1.0.1",
@@ -73,13 +68,7 @@
     "@types/react-dom": "^18.0.9",
     "@types/react-resize-detector": "^6.1.0",
     "@types/ua-parser-js": "^0.7.33",
-<<<<<<< HEAD
     "antd": "^5.0.3"
-=======
-    "antd": "^5.0.3",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
->>>>>>> x6/master
   },
   "author": {
     "name": "bubkoo",
