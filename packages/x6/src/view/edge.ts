@@ -116,10 +116,7 @@ export class EdgeView<
       ref = this.removeAction(ref, ['render', 'update', 'labels', 'tools'])
       return ref
     }
-<<<<<<< HEAD
 
-=======
->>>>>>> x6/master
     ref = this.handleAction(ref, 'update', () => this.update(options))
     ref = this.handleAction(ref, 'labels', () => this.onLabelsChange(options))
     ref = this.handleAction(ref, 'tools', () => this.renderTools())
@@ -2563,10 +2560,7 @@ EdgeView.config<EdgeView.Options>({
     labels: ['labels'],
     defaultLabel: ['labels'],
     tools: ['tools'],
-<<<<<<< HEAD
-    // position: ['translate', 'tools'], //added in to ensure scheduler does not delay dragging of edges
-=======
->>>>>>> x6/master
+
     vertices: ['vertices', 'update'],
   },
 })
