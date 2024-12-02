@@ -3,10 +3,7 @@ import {
   ModifierKey,
   CssLoader,
   Dom,
-<<<<<<< HEAD
   ObjectExt,
-=======
->>>>>>> x6/master
   Cell,
   EventArgs,
   Graph,
@@ -22,19 +19,9 @@ export class Selection
   public name = 'selection'
 
   private graph: Graph
-<<<<<<< HEAD
-
-  private selectionImpl: SelectionImpl
-
-  private readonly options: Selection.Options
-
-  private movedMap = new WeakMap<Cell, boolean>()
-
-=======
   private selectionImpl: SelectionImpl
   private readonly options: Selection.Options
   private movedMap = new WeakMap<Cell, boolean>()
->>>>>>> x6/master
   private unselectMap = new WeakMap<Cell, boolean>()
 
   get rubberbandDisabled() {
@@ -321,12 +308,8 @@ export class Selection
     this.graph.on('blank:mousedown', this.onBlankMouseDown, this)
     this.graph.on('blank:click', this.onBlankClick, this)
     this.graph.on('cell:mousemove', this.onCellMouseMove, this)
-<<<<<<< HEAD
     this.graph.on('cell:mousemoved', this.onCellMouseMoved, this)
     this.graph.on('cell:mousedown', this.onCellMouseDown, this)
-=======
-    this.graph.on('cell:mouseup', this.onCellMouseUp, this)
->>>>>>> x6/master
     this.selectionImpl.on('box:mousedown', this.onBoxMouseDown, this)
   }
 
@@ -506,6 +489,6 @@ export namespace Selection {
     selectNodeOnMoved: false,
     selectEdgeOnMoved: false,
     following: true,
-    content: null
+    content: null,
   }
 }

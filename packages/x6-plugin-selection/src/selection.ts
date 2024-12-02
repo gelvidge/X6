@@ -17,32 +17,17 @@ import {
 
 export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   public readonly options: SelectionImpl.Options
-<<<<<<< HEAD
 
   protected readonly collection: Collection
-
   protected selectionContainer: HTMLElement
-
   protected selectionContent: HTMLElement
-
   protected totalDx: number
-
   protected totalDy: number
-
   protected notifyTranslate: boolean
-
   protected draggedCell: Cell
-
   protected numCellsUpdated: number
-
   protected boxCount: number
 
-=======
-  protected readonly collection: Collection
-  protected selectionContainer: HTMLElement
-  protected selectionContent: HTMLElement
-  protected boxCount: number
->>>>>>> x6/master
   protected boxesUpdated: boolean
 
   public get graph() {
@@ -83,16 +68,13 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.numCellsUpdated = 0
     this.notifyTranslate = true
 
-
     this.createContainer()
     this.startListening()
   }
 
   protected startListening() {
-
     const { graph } = this
     const { collection } = this
-
 
     this.delegateEvents(
       {
@@ -124,11 +106,9 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     const { graph } = this
     const { collection } = this
 
-
     this.undelegateEvents()
 
     graph.off('scale', this.onGraphTransformed, this)
-
 
     graph.off('node:moved', this.endTranslate, this)
     graph.off('edge:moved', this.endTranslate, this)
@@ -144,7 +124,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     // collection.off('cell:changed', this.onCellChanged, this); - this can be permantly removed
     collection.off('node:change:angle', this.onCellChanged, this)
     collection.off('node:change:size', this.onCellChanged, this)
-
   }
 
   protected onRemove() {
@@ -194,7 +173,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
       const dy = current.y - previous.y
       if (dx !== 0 || dy !== 0) {
         this.translateSelectedNodes(dx, dy, cell, options)
-
       }
       this.translating = false
     }
@@ -302,10 +280,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
   startSelecting(evt: Dom.MouseDownEvent) {
     // Flow: startSelecting => adjustSelection => stopSelecting
-<<<<<<< HEAD
-=======
 
->>>>>>> x6/master
     evt = this.normalizeEvent(evt) // eslint-disable-line
     this.clean()
     let x
@@ -350,9 +325,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   filter(cells: Cell[]) {
-
     const { filter } = this.options
-
 
     return cells.filter((cell) => {
       if (Array.isArray(filter)) {
@@ -372,11 +345,9 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected stopSelecting(evt: Dom.MouseUpEvent) {
-
     const { graph } = this
     const eventData = this.getEventData<EventData.Common>(evt)
     const { action } = eventData
-
 
     switch (action) {
       case 'selecting': {
@@ -420,7 +391,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected onMouseUp(evt: Dom.MouseUpEvent) {
-
     const { action } = this.getEventData<EventData.Common>(evt)
 
     if (action) {
@@ -447,11 +417,9 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.delegateDocumentEvents(Private.documentEvents, e.data)
   }
 
-
   protected onSelectionBoxMouseUp(evt: Dom.MouseDownEvent) {
     // console.log('mouseup');
   }
-
 
   protected startTranslating(evt: Dom.MouseDownEvent) {
     this.graph.model.startBatch('move-selection')
@@ -466,7 +434,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   private getRestrictArea(): Rectangle.RectangleLike | null {
-
     const { restrict } = this.graph.options.translating
 
     const area =
@@ -553,7 +520,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
             dx * scale.sx,
             dy * scale.sy,
           )
-
         }
         this.updateElementPosition(
           this.selectionContainer,
@@ -634,7 +600,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.boxesUpdated = false
   }
 
-
   protected endTranslate({ cell }) {
     if (this.collection.length <= 1) return
     console.log('endingTranslate', cell.id)
@@ -659,7 +624,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.notifyTranslate = true
   }
   // })
-
 
   protected translateSelectedNodes(
     dx: number,
@@ -718,7 +682,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected getCellViewsInArea(rect: Rectangle) {
-
     const { graph } = this
 
     const options = {
@@ -927,15 +890,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     )
   }
 
-<<<<<<< HEAD
-=======
-  protected getPointerEventsValue(pointerEvents: 'none' | 'auto' | ((cells: Cell[]) => 'none' | 'auto')) {
-    return typeof pointerEvents === 'string'
-      ? pointerEvents
-      : pointerEvents(this.cells)
-  }
-
->>>>>>> x6/master
   protected createSelectionBox(cell: Cell) {
     this.addCellSelectedClassName(cell)
 
@@ -949,7 +903,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         const className = this.boxClassName
         const box = document.createElement('div')
 
-
         Dom.addClass(box, className)
         Dom.addClass(box, `${className}-${cell.isNode() ? 'node' : 'edge'}`)
         Dom.attr(box, 'data-cell-id', cell.id)
@@ -960,7 +913,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
           width: bbox.width,
           height: bbox.height,
           pointerEvents: this.options.pointerEvents || 'auto',
-
         })
         Dom.appendTo(box, this.container)
         this.showSelected()
@@ -1014,7 +966,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected onReseted({ previous, current }: Collection.EventArgs['reseted']) {
-
     this.totalDx = 0
     this.totalDy = 0
 
@@ -1083,7 +1034,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 }
 
 export namespace SelectionImpl {
-
   export interface CommonOptions {
     model?: Model
     collection?: Collection
@@ -1112,7 +1062,6 @@ export namespace SelectionImpl {
     // Whether to respond event on the selectionBox
 
     pointerEvents?: 'none' | 'auto'
-
   }
 
   export interface Options extends CommonOptions {
@@ -1138,11 +1087,9 @@ export namespace SelectionImpl {
     batch?: boolean
   }
 
-
   export type AddOptions = Collection.AddOptions
 
   export type RemoveOptions = Collection.RemoveOptions
-
 }
 
 export namespace SelectionImpl {
