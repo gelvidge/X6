@@ -1,10 +1,6 @@
 {
   "name": "@antv/x6",
-<<<<<<< HEAD
   "version": "2.19.0",
-=======
-  "version": "2.18.1",
->>>>>>> x6/master
   "description": "JavaScript diagramming library that uses SVG and HTML for rendering",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -48,15 +44,9 @@
     "pretest": "rss"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@antv/x6-common": "file:..\\x6-common",
     "@antv/x6-geometry": "file:..\\x6-geometry",
     "utility-types": "^3.11.0"
-=======
-    "@antv/x6-common": "^2.0.16",
-    "@antv/x6-geometry": "^2.0.5",
-    "utility-types": "^3.10.0"
->>>>>>> x6/master
   },
   "author": {
     "name": "bubkoo",
