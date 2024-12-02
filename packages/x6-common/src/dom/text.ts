@@ -453,16 +453,12 @@ export function breakText(
     const splitText: string[] = []
 
     text.split(eol).map((line) => {
-<<<<<<< HEAD
       const part = breakText(
         line,
         { ...size, height: Number.MAX_SAFE_INTEGER },
         styles,
         { ...options, eol: delimiter },
       )
-=======
-      const part = breakText(line, { ...size, height: Number.MAX_SAFE_INTEGER }, styles, { ...options, eol: delimiter })
->>>>>>> x6/master
 
       if (part) {
         splitText.push(...part.split(delimiter))

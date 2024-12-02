@@ -1,18 +1,6 @@
-<<<<<<< HEAD
 import { camelCase, startCase, upperCase, lowerCase, upperFirst } from 'lodash'
 
 export { lowerFirst, upperFirst, camelCase } from 'lodash'
-=======
-import {
-  camelCase,
-  startCase,
-  upperCase,
-  lowerCase,
-  upperFirst,
-} from 'lodash-es'
-
-export { lowerFirst, upperFirst, camelCase } from 'lodash-es'
->>>>>>> x6/master
 
 // @see: https://medium.com/@robertsavian/javascript-case-converters-using-lodash-4f2f964091cc
 

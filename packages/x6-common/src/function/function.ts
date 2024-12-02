@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 export { debounce, throttle } from 'lodash'
-=======
-export { debounce, throttle } from 'lodash-es'
->>>>>>> x6/master
 
 type Fn = (...args: any[]) => any
 

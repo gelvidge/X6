@@ -35,8 +35,4 @@ if (typeof window !== 'undefined') {
       })
     })
   })([Element.prototype, Document.prototype, DocumentFragment.prototype])
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> x6/master

@@ -5,12 +5,8 @@ function camelize(str: string) {
 
 const memoized: { [key: string]: string | null } = {}
 const prefixes = ['webkit', 'ms', 'moz', 'o']
-<<<<<<< HEAD
 const testStyle =
   typeof document !== 'undefined' ? document.createElement('div').style : {}
-=======
-const testStyle = typeof document !== 'undefined' ? document.createElement('div').style : {}
->>>>>>> x6/master
 
 function getWithPrefix(name: string) {
   for (let i = 0; i < prefixes.length; i += 1) {

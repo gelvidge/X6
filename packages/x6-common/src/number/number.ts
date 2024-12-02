@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 export { isNumber, clamp } from 'lodash'
-=======
-export { isNumber, clamp } from 'lodash-es'
->>>>>>> x6/master
 
 /**
  * Returns the remainder of division of `n` by `m`. You should use this

@@ -10,11 +10,7 @@ export {
   cloneDeep,
   defaults,
   defaultsDeep,
-<<<<<<< HEAD
 } from 'lodash'
-=======
-} from 'lodash-es'
->>>>>>> x6/master
 
 export * from './mixins'
 export * from './inherit'
