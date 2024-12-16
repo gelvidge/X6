@@ -6,13 +6,8 @@
 </template>
 
 <script lang="ts">
-<<<<<<< HEAD
 import { defineComponent } from 'vue'
 import ProgressNode from './components/ProgressNode.vue'
-=======
-import { defineComponent } from 'vue';
-import ProgressNode from './components/ProgressNode.vue';
->>>>>>> x6/master
 import { Graph } from '@antv/x6'
 import { register, getTeleport } from '@antv/x6-vue-shape'
 
@@ -27,11 +22,7 @@ const TeleportContainer = getTeleport()
 export default defineComponent({
   name: 'App',
   components: {
-<<<<<<< HEAD
     TeleportContainer,
-=======
-    TeleportContainer
->>>>>>> x6/master
   },
   mounted() {
     const graph = new Graph({
@@ -39,11 +30,7 @@ export default defineComponent({
       background: {
         color: '#F2F7FA',
       },
-<<<<<<< HEAD
       autoResize: true,
-=======
-      autoResize: true
->>>>>>> x6/master
     })
 
     graph.addNode({
@@ -51,13 +38,8 @@ export default defineComponent({
       x: 100,
       y: 60,
     })
-<<<<<<< HEAD
   },
 })
-=======
-  }
-});
->>>>>>> x6/master
 </script>
 
 <style>

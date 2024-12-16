@@ -38,15 +38,15 @@
     "coveralls": "rss",
     "pretest": "rss"
   },
-  "peerDependencies": {
-    "@antv/x6": "../x6"
-  },
-  "devDependencies": {
-    "@antv/x6": "../x6"
-  },
   "author": {
     "name": "bubkoo",
     "email": "bubkoo.wy@gmail.com"
+  },
+  "peerDependencies": {
+    "@antv/x6": "file:..\\x6"
+  },
+  "devDependencies": {
+    "@antv/x6": "file:..\\x6"
   },
   "license": "MIT",
   "homepage": "https://x6.antv.antgroup.com/tutorial/plugins/snapline",

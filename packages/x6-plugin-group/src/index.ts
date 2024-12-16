@@ -1,19 +1,10 @@
-import {
-  Basecoat,
-  ModifierKey,
-  CssLoader,
-  Dom,
-  ObjectExt,
-  Cell,
-  EventArgs,
-  Graph,
-  Node,
-} from '@antv/x6'
+import { Basecoat, CssLoader, Graph, Cell, Node } from '@antv/x6'
+import { Point, Angle } from '@antv/x6-geometry'
+import SVGPathCommander from 'svg-path-commander'
+import { EventArgs } from '@antv/x6-common/lib/event/types'
 import { content } from './style/raw'
 import './api'
 import { GroupImpl } from './group'
-import { Point, Angle } from '@antv/x6-geometry'
-import SVGPathCommander from 'svg-path-commander'
 
 export class Group
   extends Basecoat<GroupImpl.EventArgs>
@@ -23,11 +14,7 @@ export class Group
 
   private graph: Graph
 
-  private groupImpl: GroupImpl
-
-  private dcSelected: []
-
-  private moveSelected: []
+  // private groupImpl: GroupImpl
 
   public readonly options: Group.Options
 
@@ -43,12 +30,10 @@ export class Group
 
   public init(graph: Graph) {
     this.graph = graph
-    this.dcSelected = []
-    this.moveSelected = []
-    this.groupImpl = new GroupImpl({
-      ...this.options,
-      graph,
-    })
+    // this.groupImpl = new GroupImpl({
+    //    ...this.options,
+    //    graph,
+    //  })
     this.startListening()
   }
 
@@ -88,107 +73,7 @@ export class Group
     return this
   }
 
-  groupCells(cells: Cell[]): GroupImpl.ParentNode | null {
-    const padding = 0
-    const childArray: Cell[] = []
-    cells.forEach((cell) => {
-      if (!cell.hasParent()) {
-        childArray.push(cell)
-        cell.prop('groupedNode', true)
-      }
-    })
-
-    if (childArray.length > 1) {
-      const bbox = this.graph.model.getCellsBBox(cells)
-      const parent = this.graph.createNode({
-        size: {
-          width: bbox.width + padding * 2,
-          height: bbox.height + padding * 2,
-        },
-        position: { x: bbox.x - padding, y: bbox.y - padding },
-        attrs: {
-          body: {
-            visibility: 'visible',
-            pointerEvents: 'visibleStroke',
-            fillOpacity: 0,
-            strokeWidth: 12,
-            strokeOpacity: 0,
-          },
-        },
-      })
-
-      childArray.forEach((cell) => {
-        cell.setParent(parent)
-      })
-
-      parent.setChildren(childArray)
-      this.graph.addNode(parent)
-      this.graph.resetSelection(parent)
-
-      parent.prop('parentNode', true)
-      return parent
-    }
-    return null
-  }
-
-  unGroupCells(cells: Cell[]): GroupImpl.ParentNode | null {
-    const groupArray: Cell[] = []
-    cells.forEach((cell) => {
-      if (!cell.hasParent() && cell.prop('parentNode')) {
-        groupArray.push(cell)
-      }
-    })
-
-    this.graph.resetSelection(groupArray)
-
-    groupArray.forEach((group) => {
-      const children = group.getChildren()
-      children?.forEach((child) => child.prop('groupedNode', false))
-      this.graph.select(children)
-      group.setChildren(null)
-      group.remove()
-    })
-  }
-
-  getRootNode(cell: Cell): GroupImpl.ParentNode | null {
-    if (!cell.hasParent()) return null
-    while (cell.hasParent()) {
-      cell = cell.getParent()
-    }
-    return cell
-  }
-
-  getRootsNodes(cells: Cell[]): GroupImpl.ParentNode[] {
-    const rootParentNodes: Cell[] = []
-    cells.forEach((cell) => {
-      if (!cell.hasParent() && cell.prop('parentNode')) {
-        rootParentNodes.push(cell)
-      }
-    })
-    return rootParentNodes
-  }
-
-  updateGroupBounds(cell: Cell) {
-    const ancestors = cell.getAncestors({ deep: true })
-    ancestors.forEach((ancestor) => {
-      const bbox = this.graph.model.getCellsBBox(
-        ancestor.getDescendants({ deep: true }),
-      )
-      ancestor.size(bbox.width, bbox.height)
-      ancestor.position(bbox.x, bbox.y)
-    })
-  }
-
   protected startListening() {
-    this.graph.on('cell:mousedown', this.onCellMouseDown, this)
-
-    this.graph.on('node:move', this.onNodeMove, this)
-    this.graph.on('node:moved', this.onNodeMoved, this)
-    this.graph.on('edge:move', this.onEdgeMove, this)
-    this.graph.on('edge:moved', this.onEdgeMoved, this)
-    this.graph.on('cell:click', this.onCellClick, this)
-    this.graph.on('cell:selected', this.onCellSelected, this)
-    this.graph.on('cell:unselected', this.onCellUnselected, this)
     this.graph.on('node:rotate', this.onNodeRotate, this)
     this.graph.on('node:rotating', this.onNodeRotating, this)
     this.graph.on('node:rotated', this.onNodeRotated, this)
@@ -198,14 +83,6 @@ export class Group
   }
 
   protected stopListening() {
-    this.graph.off('cell:mousedown', this.onCellMouseDown, this)
-    this.graph.off('node:move', this.onNodeMove, this)
-    this.graph.off('node:moved', this.onNodeMoved, this)
-    this.graph.on('edge:move', this.onEdgeMove, this)
-    this.graph.off('edge:moved', this.onEdgeMoved, this)
-    this.graph.off('cell:click', this.onCellClick, this)
-    this.graph.off('cell:selected', this.onCellSelected, this)
-    this.graph.off('cell:unselected', this.onCellUnselected, this)
     this.graph.off('node:rotate', this.onNodeRotate, this)
     this.graph.off('node:rotating', this.onNodeRotating, this)
     this.graph.off('node:rotated', this.onNodeRotated, this)
@@ -214,126 +91,11 @@ export class Group
     this.graph.off('node:resized', this.onNodeResized, this)
   }
 
-  protected onCellMouseDown({ e, cell }: EventArgs['cell:mousedown']) {
-    const parent = this.graph.getRootNode(cell)
-    if (!parent) return // cells without parent managed by selection plugin (index.js)
-    if (!this.graph.isSelected(parent) && e.ctrlKey) {
-      this.graph.select(parent)
-    } else if (!this.graph.isSelected(parent)) {
-      this.graph.resetSelection(parent)
-    } else this.dcSelected.push(cell)
-  }
-
-  protected onNodeMove({ node }: EventArgs['node:move']) {
-    const parent = this.graph.getRootNode(node)
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    if (this.graph.isSelected(node)) {
-      this.graph.resetSelection(node)
-      // this.moveSelected.push(node);
-    } else {
-      children?.forEach((child) => {
-        this.graph.select(child)
-        //  this.moveSelected.push(child);
-
-        child.isNode() && this.graph.clearTransformWidget(child)
-        this.graph.unselect(parent) // pseudo unselection for children- bit of a hack
-      })
-    }
-  }
-
-  protected onEdgeMove({ edge }: EventArgs['edge:move']) {
-    const parent = this.graph.getRootNode(edge)
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    if (this.graph.isSelected(edge)) {
-      this.graph.resetSelection(edge)
-      // this.moveSelected.push(node);
-    } else {
-      children?.forEach((child) => {
-        this.graph.select(child)
-        //  this.moveSelected.push(child);
-
-        child.isNode() && this.graph.clearTransformWidget(child)
-        this.graph.unselect(parent) // pseudo unselection for children- bit of a hack
-      })
-      console.log(children)
-    }
-  }
-
-  protected onNodeMoved({ node }: EventArgs['node:moved']) {
-    const parent = this.graph.getRootNode(node)
-    // this.graph.clearTransformWidget(node);
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    children?.forEach((child) => this.graph.unselect(child))
-    this.graph.select(parent)
-    // if (this.moveSelected.includes(node)) {
-    //     this.graph.select(node);
-    // }
-    // this.moveSelected = [];
-    this.graph.updateGroupBounds(node)
-  }
-
-  protected onEdgeMoved({ edge }: EventArgs['edge:moved']) {
-    const parent = this.graph.getRootNode(edge)
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    children?.forEach((child) => this.graph.unselect(child))
-    this.graph.select(parent)
-    // if (this.moveSelected.includes(edge)) {
-    //    this.graph.select(edge);
-    // }
-    // this.moveSelected = [];
-    this.graph.updateGroupBounds(edge)
-  }
-
-  protected onCellClick({ e, cell }: EventArgs['cell:click']) {
-    const parent = this.graph.getRootNode(cell)
-    if (!parent) return
-    const group = this.getSelectedParentCells()
-    if (group.length > 1) {
-      group.forEach((cell) => {
-        this.graph.unselect(cell.getDescendants({ deep: true }))
-      })
-      return
-    }
-    if (this.graph.isSelected(cell)) {
-      this.graph.unselect(cell)
-    } else if (!this.graph.isSelected(cell) && e.ctrlKey) {
-      this.graph.select(cell)
-    } else if (!this.graph.isSelected(cell) && this.dcSelected.includes(cell)) {
-      this.graph.resetSelection([parent, cell])
-      this.dcSelected = []
-    } else if (!this.graph.isSelected(cell)) {
-      this.dcSelected.push(cell)
-    }
-  }
-
-  protected onCellUnselected({ cell }: EventArgs['cell:unselected']) {
-    this.dcSelected = []
-    if (cell.prop('parentNode')) {
-      cell.setAttrs({
-        body: { visibility: 'hidden' },
-      })
-    }
-  }
-
-  protected onCellSelected({ cell }: EventArgs['cell:selected']) {
-    if (cell.prop('parentNode')) {
-      cell.setAttrs({
-        body: { visibility: 'visible' },
-      })
-      const children = cell.getDescendants({ deep: true })
-      this.graph.unselect(children)
-    }
-  }
-
-  protected onNodeRotate({ node }) {
+  protected onNodeRotate({ node }: { node: Node }) {
     node.prop('isRotating', true)
     const children = node.getDescendants()
     if (children?.length > 0) {
-      children.forEach((child) => {
+      children.forEach((child: Cell) => {
         if (child.isEdge()) {
           const source = child.getSourcePoint()
           if (source) {
@@ -353,7 +115,7 @@ export class Group
     }
   }
 
-  protected onNodeRotating({ node }) {
+  protected onNodeRotating({ node }: { node: Node }) {
     // setSelectedNodes((s) => s.map((el, index) => el)); // very slowed cause jumpy ui but required (need momosing) not needed when using Signia
     const pangle = node.getAngle()
     // state.setR(pangle);
@@ -388,7 +150,7 @@ export class Group
     }
   }
 
-  protected onNodeRotated({ node }) {
+  protected onNodeRotated({ node }: { node: Node }) {
     const pangle = node.getAngle()
     node.prop('startAngle', pangle, { silent: true })
     node.prop('isRotating', false)
@@ -398,16 +160,16 @@ export class Group
         if (child.isEdge()) {
           child.prop('edgeSourceStart', null)
           child.prop('edgeTargetStart', null)
-        } else {
+        } else if (child.isNode()) {
           child.prop('isRotating', false)
-          const cangle = child.getAngle()
+          const cangle = (child as Node).getAngle()
           child.prop('startAngle', cangle - pangle, { silent: true })
         }
       })
     }
   }
 
-  protected onNodeResize({ e, x, y, node, view }) {
+  protected onNodeResize({ e, node }: { e: EventArgs; node: Node }) {
     const dragPort = e.data[Object.keys(e.data)[0]].relativeDirection
     const bbox = node.getBBox()
 
@@ -450,19 +212,42 @@ export class Group
     }
   }
 
-  protected onNodeResizing({ e, x, y, node, view }) {
+  protected onNodeResizing({
+    x,
+    y,
+    node,
+  }: {
+    x: number
+    y: number
+    node: Node
+  }) {
     if (node.hasParent()) {
       const parent = node.getParent()
-      const bbox = graph.model.getCellsBBox(parent.getChildren())
-      parent.size(bbox.width, bbox.height)
-      parent.position(bbox.x, bbox.y)
+      const children = parent?.getChildren()
+      const bbox = parent && children && this.graph.model.getCellsBBox(children)
+      parent &&
+        this.graph.isNode(parent) &&
+        bbox &&
+        parent.size(bbox.width, bbox.height)
+      parent &&
+        this.graph.isNode(parent) &&
+        bbox &&
+        parent.position(bbox.x, bbox.y)
     }
     const pStartBBox = node.prop('startBBox')
     // note x and y cursor positions round to grid intervals
     // setSelectedNodes((s) => s.map((el, index) => el)); // very slowed cause jumpy ui but required (need momosing) not needed when using Signia
     const pAngle = node.angle()
     const pOrigDragPort = node.prop('dragPort') // this is the original port that is being dragged
-    let pCurrDragPort = pOrigDragPort
+    let pCurrDragPort:
+      | 'right'
+      | 'left'
+      | 'bottom'
+      | 'top'
+      | 'bottom-left'
+      | 'bottom-right'
+      | 'top-left'
+      | 'top-right' = pOrigDragPort
 
     const pBBox = node.getBBox()
 
@@ -545,9 +330,7 @@ export class Group
         break
 
       default:
-        console.log('parent-switch - this should not be reached')
     }
-
     const map = {
       right: 0,
       'top-right': 0,
@@ -584,13 +367,17 @@ export class Group
       const path = node.getAttrByPath('body/refD')
       if (path) {
         // only works for path elements - need to look at converting svg shapes into paths potentially????***
-        const flippedPathStringX = new SVGPathCommander(path).flipX().toString()
+        const flippedPathStringX = new SVGPathCommander(path as string)
+          .flipX()
+          .toString()
         node.setAttrByPath('body/refD', flippedPathStringX)
       }
     } else if (!xFlipped && node.prop('xFlipped') !== false) {
       const path = node.getAttrByPath('body/refD')
       if (path) {
-        const flippedPathStringX = new SVGPathCommander(path).flipX().toString()
+        const flippedPathStringX = new SVGPathCommander(path as string)
+          .flipX()
+          .toString()
         node.setAttrByPath('body/refD', flippedPathStringX)
       }
     }
@@ -598,13 +385,17 @@ export class Group
     if (yFlipped && node.prop('yFlipped') !== true) {
       const path = node.getAttrByPath('body/refD')
       if (path) {
-        const flippedPathStringY = new SVGPathCommander(path).flipY().toString()
+        const flippedPathStringY = new SVGPathCommander(path as string)
+          .flipY()
+          .toString()
         node.setAttrByPath('body/refD', flippedPathStringY)
       }
     } else if (!yFlipped && node.prop('yFlipped') !== false) {
       const path = node.getAttrByPath('body/refD')
       if (path) {
-        const flippedPathStringY = new SVGPathCommander(path).flipY().toString()
+        const flippedPathStringY = new SVGPathCommander(path as string)
+          .flipY()
+          .toString()
         node.setAttrByPath('body/refD', flippedPathStringY)
       }
     }
@@ -630,20 +421,20 @@ export class Group
           const yTargetDistance =
             (pStartBBox.y + pStartBBox.height - sTargetnode.y) * yFactor
 
-          let xRef = xFlipped ? pBBox.x : pBBox.x + pBBox.width
-          let yRef = yFlipped ? pBBox.y : pBBox.y + pBBox.height
+          const xRef = xFlipped ? pBBox.x : pBBox.x + pBBox.width
+          const yRef = yFlipped ? pBBox.y : pBBox.y + pBBox.height
 
-          let xSource = xFlipped
+          const xSource = xFlipped
             ? xRef + xSourceDistance
             : xRef - xSourceDistance
-          let ySource = yFlipped
+          const ySource = yFlipped
             ? yRef + ySourceDistance
             : yRef - ySourceDistance
 
-          let xTarget = xFlipped
+          const xTarget = xFlipped
             ? xRef + xTargetDistance
             : xRef - xTargetDistance
-          let yTarget = yFlipped
+          const yTarget = yFlipped
             ? yRef + yTargetDistance
             : yRef - yTargetDistance
 
@@ -659,11 +450,11 @@ export class Group
 
           child.prop('xFlipped', xFlipped)
           child.prop('yFlipped', yFlipped)
-        } else {
+        } else if (child.isNode()) {
           const cAngle = Angle.normalize(child.angle() || 0)
 
           const cStartBBox = child.prop('startBBox')
-          const { x: cx, y: cy, width, height } = cStartBBox
+          const { width, height } = cStartBBox
 
           const fixedQuadrantOffset = Math.floor((cAngle - pAngle + 45) / 90) // new
 
@@ -676,8 +467,9 @@ export class Group
           if (newKeyIndex > 7) newKeyIndex -= 8
 
           let cFixedQuadrant = Object.values(map)[newKeyIndex]
-          const cCurrDragPort = Object.keys(map)[newKeyIndex] // new
-
+          const cCurrDragPort = (Object.keys(map) as Array<keyof typeof map>)[
+            newKeyIndex
+          ] // new
           const cFixedPoint = cStartBBox.getCenter()
 
           let origKeyIndex =
@@ -722,9 +514,6 @@ export class Group
               cFixedPoint.add(cStartBBox.width / 2, cStartBBox.height / 2)
               break
             default:
-              console.log(
-                `child port:${cOrigDragPort} -this should not be reached`,
-              )
           }
 
           cFixedQuadrant = map[cCurrDragPort]
@@ -783,18 +572,18 @@ export class Group
             .clone()
             .add(xOffsetTrans, yOffsetTrans)
 
-          child.size(newWidth, newHeight)
+          this.graph.isNode(child) && child.size(newWidth, newHeight)
           const cCenter = Point.fromPolar(radius, alpha, translatedcFixedPoint)
           const cOrigin = cCenter
             .clone()
             .translate(newWidth / -2, newHeight / -2)
-          child.position(cOrigin.x, cOrigin.y)
+          this.graph.isNode(child) && child.position(cOrigin.x, cOrigin.y)
 
           if (xFlipped && child.prop('xFlipped') !== true) {
             const path = child.getAttrByPath('body/refD')
 
             if (path) {
-              const flippedPathStringX = new SVGPathCommander(path)
+              const flippedPathStringX = new SVGPathCommander(path as string)
                 .flipX()
                 .toString()
               child.setAttrByPath('body/refD', flippedPathStringX)
@@ -802,7 +591,7 @@ export class Group
           } else if (!xFlipped && child.prop('xFlipped') !== false) {
             const path = child.getAttrByPath('body/refD')
             if (path) {
-              const flippedPathStringX = new SVGPathCommander(path)
+              const flippedPathStringX = new SVGPathCommander(path as string)
                 .flipX()
                 .toString()
               child.setAttrByPath('body/refD', flippedPathStringX)
@@ -812,7 +601,7 @@ export class Group
           if (yFlipped && child.prop('yFlipped') !== true) {
             const path = child.getAttrByPath('body/refD')
             if (path) {
-              const flippedPathStringY = new SVGPathCommander(path)
+              const flippedPathStringY = new SVGPathCommander(path as string)
                 .flipY()
                 .toString()
               child.setAttrByPath('body/refD', flippedPathStringY)
@@ -820,7 +609,7 @@ export class Group
           } else if (!yFlipped && child.prop('yFlipped') !== false) {
             const path = child.getAttrByPath('body/refD')
             if (path) {
-              const flippedPathStringY = new SVGPathCommander(path)
+              const flippedPathStringY = new SVGPathCommander(path as string)
                 .flipY()
                 .toString()
               child.setAttrByPath('body/refD', flippedPathStringY)
@@ -834,7 +623,7 @@ export class Group
     }
   }
 
-  protected onNodeResized({ e, x, y, node, view }) {
+  protected onNodeResized({ node }: { node: Node }) {
     node.prop('isResizing', false)
     node.removeProp(['startBBox'])
     node.removeProp(['dragPort'])
@@ -847,23 +636,6 @@ export class Group
         child.removeProp('dragPort')
       })
     }
-  }
-
-  protected getCells(cells: Cell | string | (Cell | string)[]) {
-    return (Array.isArray(cells) ? cells : [cells])
-      .map((cell) =>
-        typeof cell === 'string' ? this.graph.getCellById(cell) : cell,
-      )
-      .filter((cell) => cell != null)
-  }
-
-  protected getSelectedParentCells() {
-    const cells = this.graph.getSelectedCells()
-    const array = []
-    cells.forEach((cell) => {
-      if (cell.prop('parentNode')) array.push(cell)
-    })
-    return array
   }
 
   @Basecoat.dispose()

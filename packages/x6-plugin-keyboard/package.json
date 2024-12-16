@@ -38,13 +38,14 @@
     "pretest": "rss"
   },
   "dependencies": {
+    "@types/mousetrap": "^1.6.15",
     "mousetrap": "^1.6.5"
   },
   "peerDependencies": {
-    "@antv/x6": "../x6"
+    "@antv/x6": "file:..\\x6"
   },
   "devDependencies": {
-    "@antv/x6": "link:..\\x6"
+    "@antv/x6": "file:..\\x6"
   },
   "author": {
     "name": "bubkoo",

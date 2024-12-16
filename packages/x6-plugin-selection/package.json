@@ -39,11 +39,10 @@
     "pretest": "rss"
   },
   "peerDependencies": {
-    "@antv/x6": "../x6"
+    "@antv/x6": "file:..\\x6"
   },
   "devDependencies": {
-    "@antv/x6": "../x6"
-
+    "@antv/x6": "file:..\\x6"
   },
   "author": {
     "name": "bubkoo",

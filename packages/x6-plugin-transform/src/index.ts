@@ -1,4 +1,4 @@
-import { Basecoat, CssLoader, KeyValue, Node, Graph, EventArgs } from '@antv/x6'
+import { Basecoat, CssLoader, KeyValue, Node, Graph } from '@antv/x6'
 import { TransformImpl } from './transform'
 import { content } from './style/raw'
 import './api'
@@ -8,19 +8,9 @@ export class Transform
   implements Graph.Plugin
 {
   public name = 'transform'
-<<<<<<< HEAD
-
-  public options: Transform.Options
-
-  private graph: Graph
-
-  protected widgets: Map<Node, TransformImpl> = new Map()
-
-=======
   public options: Transform.Options
   private graph: Graph
   protected widgets: Map<Node, TransformImpl> = new Map()
->>>>>>> x6/master
   private disabled = false
 
   constructor(options: Transform.Options = {}) {
@@ -38,18 +28,10 @@ export class Transform
   }
 
   protected startListening() {
-<<<<<<< HEAD
-=======
-    this.graph.on('node:click', this.onNodeClick, this)
->>>>>>> x6/master
     this.graph.on('blank:mousedown', this.onBlankMouseDown, this)
   }
 
   protected stopListening() {
-<<<<<<< HEAD
-=======
-    this.graph.off('node:click', this.onNodeClick, this)
->>>>>>> x6/master
     this.graph.off('blank:mousedown', this.onBlankMouseDown, this)
   }
 
@@ -71,15 +53,10 @@ export class Transform
     return !this.disabled
   }
 
-<<<<<<< HEAD
   createWidget(node: Node, add: boolean) {
     if (!add) {
       this.clearWidgets()
     }
-=======
-  createWidget(node: Node) {
-    this.clearWidgets()
->>>>>>> x6/master
     const widget = this.createTransform(node)
     if (widget) {
       this.widgets.set(node, widget)
@@ -90,13 +67,6 @@ export class Transform
     }
   }
 
-<<<<<<< HEAD
-=======
-  protected onNodeClick({ node }: EventArgs['node:click']) {
-    this.createWidget(node)
-  }
-
->>>>>>> x6/master
   protected onBlankMouseDown() {
     this.clearWidgets()
   }
@@ -179,7 +149,6 @@ export class Transform
     this.widgets.clear()
   }
 
-<<<<<<< HEAD
   clearWidget(node: Node) {
     this.widgets.forEach((widget, nodeMap) => {
       if (this.graph.getCellById(node.id) && node.id === nodeMap.id) {
@@ -189,8 +158,6 @@ export class Transform
     })
   }
 
-=======
->>>>>>> x6/master
   @Basecoat.dispose()
   dispose() {
     this.clearWidgets()
@@ -201,11 +168,7 @@ export class Transform
 }
 
 export namespace Transform {
-<<<<<<< HEAD
   export type EventArgs = TransformImpl.EventArgs
-=======
-  export interface EventArgs extends TransformImpl.EventArgs {}
->>>>>>> x6/master
 
   type OptionItem<T, S> = S | ((this: Graph, arg: T) => S)
 

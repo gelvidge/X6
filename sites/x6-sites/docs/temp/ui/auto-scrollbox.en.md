@@ -7,11 +7,7 @@ redirect_from:
   - /en/docs/api/ui
 ---
 
-<<<<<<< HEAD
-自动根据内容大小设置和更新容器的滚动条。
-=======
 Automatically adjusts and updates the scrollbar of the container based on the content size.
->>>>>>> x6/master
 
 <iframe src="/demos/api/ui/auto-scrollbox/basic"></iframe>
 
@@ -47,19 +43,6 @@ import '@antv/x6-react-components/es/auto-scroll-box/style/index.css'
   </AutoScrollBox>
 </div>
 ```
-<<<<<<< HEAD
-
-## AutoScrollBox
-
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
-| scrollBoxProps | 内部的 [ScrollBox](/en/docs/api/ui/scrollbox) 组件选项 | ScrollBox.Props | - |
-| refreshRate | 监听内容容器大小改变的频率 | number | `1000` |
-| skipOnMount | 首次渲染时是否触发 `onResize` 回调 | boolean | - |
-| scrollX | 是否显示水平滚动条 | boolean | `true` |
-| scrollY | 是否显示垂直滚动条 | boolean | `true` |
-| onResize | 内容容器大小改变时的回调函数 | (width: number, height: number) => void | - |
-=======
 ## AutoScrollBox
 
 | Parameter         | Description                                         | Type                  | Default Value |
@@ -70,4 +53,3 @@ import '@antv/x6-react-components/es/auto-scroll-box/style/index.css'
 | scrollX           | Whether to show the horizontal scrollbar            | boolean               | `true`        |
 | scrollY           | Whether to show the vertical scrollbar              | boolean               | `true`        |
 | onResize          | Callback function when the content container size changes | (width: number, height: number) => void | -             |
->>>>>>> x6/master

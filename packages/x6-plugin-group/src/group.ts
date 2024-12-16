@@ -30,26 +30,26 @@ export class GroupImpl extends View<GroupImpl.EventArgs> {
       this.options.collection = this.collection
     }
 
-    this.startListening()
+    // this.startListening()
   }
 
-  protected startListening() {
-    const { graph } = this
+  //  protected startListening() {
+  //    const { graph } = this
 
-    //   graph.on('scale', this.onGraphTransformed, this);
-    //  graph.on('translate', this.onGraphTransformed, this);
-    //   graph.model.on('updated', this.onModelUpdated, this);
-  }
+  //   graph.on('scale', this.onGraphTransformed, this);
+  //  graph.on('translate', this.onGraphTransformed, this);
+  //   graph.model.on('updated', this.onModelUpdated, this);
+  //  }
 
-  protected stopListening() {
-    const { graph } = this
+  // protected stopListening() {
+  //   const { graph } = this
 
-    this.undelegateEvents()
+  //   this.undelegateEvents()
 
-    // graph.off('scale', this.onGraphTransformed, this);
-    // graph.off('translate', this.onGraphTransformed, this);
-    // graph.model.off('updated', this.onModelUpdated, this);
-  }
+  // graph.off('scale', this.onGraphTransformed, this);
+  // graph.off('translate', this.onGraphTransformed, this);
+  // graph.model.off('updated', this.onModelUpdated, this);
+  // }
 
   @View.dispose()
   dispose() {
@@ -75,13 +75,7 @@ export namespace GroupImpl {
 }
 
 export namespace GroupImpl {
-  export interface GroupEventArgs {
-    'cell:onMouseDown': { cell: Cell; options: Model.SetOptions }
-    'node:unselected': { node: Node }
-  }
-
-  export type ParentNode = Node
-  export type groupedNode = Node
+  export interface GroupEventArgs {}
 
   export type EventArgs = GroupEventArgs
 }

@@ -141,11 +141,7 @@ export interface Job {
 
 export enum JOB_PRIORITY {
   Update = /*    */ 1 << 1,
-<<<<<<< HEAD
-  RenderEdge = /**/ 1 << 3,
-=======
   RenderEdge = /**/ 1 << 2,
->>>>>>> x6/master
   RenderNode = /**/ 1 << 3,
   PRIOR = /*     */ 1 << 20,
 }

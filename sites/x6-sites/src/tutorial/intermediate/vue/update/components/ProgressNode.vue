@@ -7,42 +7,25 @@
 </template>
 
 <script lang="ts">
-<<<<<<< HEAD
 import { defineComponent } from 'vue'
 import { Node } from '@antv/x6'
-=======
-import { defineComponent } from 'vue';
-import { Node } from '@antv/x6';
->>>>>>> x6/master
 
 export default defineComponent({
   name: 'ProgressNode',
   inject: ['getNode'],
   data() {
     return {
-<<<<<<< HEAD
       percentage: 80,
-=======
-      percentage: 80
->>>>>>> x6/master
     }
   },
   mounted() {
     const node = (this as any).getNode() as Node
     node.on('change:data', ({ current }) => {
-<<<<<<< HEAD
       const { progress } = current
       this.percentage = progress
     })
   },
 })
-=======
-      const { progress } = current;
-      this.percentage = progress;
-    })
-  }
-});
->>>>>>> x6/master
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

@@ -39,12 +39,12 @@
     "pretest": "rss"
   },
   "peerDependencies": {
-    "@antv/x6": "../x6",
+    "@antv/x6": "file:..\\x6",
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
-    "@antv/x6": "link:..\\x6",
+    "@antv/x6": "file:..\\x6",
     "@types/react": ">=18.0.0",
     "@types/react-dom": ">=18.0.0"
   },

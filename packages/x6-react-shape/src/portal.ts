@@ -61,10 +61,6 @@ export namespace Portal {
     // eslint-disable-next-line react/display-name
     return () => {
       active = true
-<<<<<<< HEAD
-
-=======
->>>>>>> x6/master
       const [items, mutate] = useReducer(reducer, [])
       dispatch = mutate
       // eslint-disable-next-line react/no-children-prop

@@ -1,10 +1,6 @@
 ---
 title: 数据
-<<<<<<< HEAD
-order: 5
-=======
 order: 6
->>>>>>> x6/master
 redirect_from:
   - /zh/docs
   - /zh/docs/tutorial

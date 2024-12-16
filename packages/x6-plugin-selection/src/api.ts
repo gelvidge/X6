@@ -1,6 +1,5 @@
 import { Graph, Cell, ModifierKey } from '@antv/x6'
 import { Selection } from './index'
-import { SelectionImpl } from './selection'
 
 declare module '@antv/x6/lib/graph/graph' {
   interface Graph {
@@ -44,15 +43,17 @@ declare module '@antv/x6/lib/graph/graph' {
       cells: Cell | string | (Cell | string)[],
       options?: Selection.RemoveOptions,
     ) => Graph
+    getRootNode: (cell: Cell) => Cell | null
+    getRootsNodes: (cells: Cell[]) => Cell[]
+    getRootGroupNodes: (cells: Cell[]) => Cell[]
+    groupCells: (cells: Cell[]) => Cell | null
+    unGroupCells: (cells: Cell[]) => void | null
+    updateGroupBounds: (cell: Cell) => void | null
   }
 }
 
 declare module '@antv/x6/lib/graph/events' {
-<<<<<<< HEAD
   //    type EventArgs = SelectionImpl.SelectionEventArgs;
-=======
-  interface EventArgs extends SelectionImpl.SelectionEventArgs {}
->>>>>>> x6/master
 }
 
 Graph.prototype.isSelectionEnabled = function () {
@@ -69,6 +70,14 @@ Graph.prototype.enableSelection = function () {
     selection.enable()
   }
   return this
+}
+
+Graph.prototype.updateGroupBounds = function (cells: Cell) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    return selection.updateGroupBounds(cells)
+  }
+  return null
 }
 
 Graph.prototype.disableSelection = function () {
@@ -298,10 +307,6 @@ Graph.prototype.select = function (
   cells: Cell | string | (Cell | string)[],
   options?: Selection.AddOptions,
 ) {
-<<<<<<< HEAD
-  console.log('SELECT')
-=======
->>>>>>> x6/master
   const selection = this.getPlugin('selection') as Selection
   if (selection) {
     selection.select(cells, options)
@@ -315,11 +320,39 @@ Graph.prototype.unselect = function (
 ) {
   const selection = this.getPlugin('selection') as Selection
   if (selection) {
-<<<<<<< HEAD
     return selection.unselect(cells, options)
-=======
-    selection.unselect(cells, options)
->>>>>>> x6/master
   }
   return this
+}
+
+Graph.prototype.getRootNode = function (cell: Cell) {
+  const group = this.getPlugin('selection') as Selection
+  if (group) {
+    return group.getRootNode(cell)
+  }
+  return cell
+}
+
+Graph.prototype.getRootsNodes = function (cells: Cell[]) {
+  const group = this.getPlugin('selection') as Selection
+  if (group) {
+    return group.getRootsNodes(cells)
+  }
+  return []
+}
+
+Graph.prototype.groupCells = function (cells: Cell[]) {
+  const group = this.getPlugin('selection') as Selection
+  if (group) {
+    return group.groupCells(cells)
+  }
+  return null
+}
+
+Graph.prototype.unGroupCells = function (cells: Cell[]) {
+  const group = this.getPlugin('selection') as Selection
+  if (group) {
+    return group.unGroupCells(cells)
+  }
+  return null
 }

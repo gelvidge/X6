@@ -7,34 +7,21 @@
 </template>
 
 <script lang="ts">
-<<<<<<< HEAD
 import { defineComponent } from 'vue'
-=======
-import { defineComponent } from 'vue';
->>>>>>> x6/master
 
 export default defineComponent({
   name: 'ProgressNode',
   inject: ['getNode'],
   data() {
     return {
-<<<<<<< HEAD
       percentage: 80,
-=======
-      percentage: 80
->>>>>>> x6/master
     }
   },
   mounted() {
     const node = (this as any).getNode()
     console.log(node)
-<<<<<<< HEAD
   },
 })
-=======
-  }
-});
->>>>>>> x6/master
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

@@ -147,7 +147,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     | Collection.EventArgs['edge:change:source']
     | Collection.EventArgs['node:change:position']) {
     if (!this.notifyTranslate) return
-    //console.log('positionChanged', cell.id);
+
     this.draggedCell = cell
 
     const { showNodeSelectionBox, pointerEvents } = this.options
@@ -417,9 +417,9 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.delegateDocumentEvents(Private.documentEvents, e.data)
   }
 
-  protected onSelectionBoxMouseUp(evt: Dom.MouseDownEvent) {
-    // console.log('mouseup');
-  }
+  // protected onSelectionBoxMouseUp(evt: Dom.MouseDownEvent) {
+  // console.log('mouseup');
+  // }
 
   protected startTranslating(evt: Dom.MouseDownEvent) {
     this.graph.model.startBatch('move-selection')
@@ -600,19 +600,16 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.boxesUpdated = false
   }
 
-  protected endTranslate({ cell }) {
+  protected endTranslate({ cell }: any) {
     if (this.collection.length <= 1) return
 
     this.notifyTranslate = false
 
     this.collection.toArray().forEach((item) => {
-      if (item.id !== cell.id) {
+      const cellView = this.graph.findViewByCell(item.id)
+      if (item.id !== cell.id && cellView) {
         item.isEdge() &&
-          Dom.translate(
-            this.graph.findViewByCell(item.id).container,
-            -this.totalDx,
-            -this.totalDy,
-          ) // to offset the css translation caused by updating the model (only applies to edges)
+          Dom.translate(cellView.container, -this.totalDx, -this.totalDy) // to offset the css translation caused by updating the model (only applies to edges)
 
         item.translate(this.totalDx, this.totalDy)
       }
@@ -655,22 +652,24 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
     this.totalDx += dx
     this.totalDy += dy
-    // console.log('totalDx: ', this.totalDx, 'totalDy: ', this.totalDy);
 
     this.collection.toArray().forEach((cell) => {
       if (!map[cell.id]) {
-        const options = {
-          ...otherOptions,
-          selection: this.cid,
-          exclude: excluded,
-        }
+        // const options = {
+        //  ...otherOptions,
+        //  selection: this.cid,
+        //   exclude: excluded,
+        // }
+        const cellView = this.graph.findViewByCell(cell.id)
 
-        Dom.translate(this.graph.findViewByCell(cell.id).container, dx, dy)
+        if (cellView) {
+          Dom.translate(cellView.container, dx, dy)
+        }
 
         this.graph.model.getConnectedEdges(cell).forEach((edge) => {
           if (!map[edge.id]) {
-            //  edge.translate(dx, dy, options);
-            Dom.translate(this.graph.findViewByCell(edge.id).container, dx, dy)
+            const edgeView = this.graph.findViewByCell(edge.id)
+            edgeView && Dom.translate(edgeView.container, dx, dy)
 
             map[edge.id] = true
           }
@@ -1118,6 +1117,8 @@ export namespace SelectionImpl {
       selected: Cell[]
       options: Model.SetOptions
     }
+    'cell:onMouseDown': { cell: Cell; options: Model.SetOptions }
+    // 'node:unselected': { node: Node }
   }
 
   export interface EventArgs extends BoxEventArgs, SelectionEventArgs {}
