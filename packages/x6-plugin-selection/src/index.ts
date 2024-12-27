@@ -413,8 +413,6 @@ export class Selection
     this.graph.on('blank:click', this.onBlankClick, this)
     this.graph.on('cell:mousedown', this.onCellMouseDown, this)
     this.selectionImpl.on('box:mousedown', this.onBoxMouseDown, this)
-
-    // fromgroup (need moving)
     this.graph.on('node:move', this.onNodeMove, this)
     this.graph.on('node:moved', this.onNodeMoved, this)
     this.graph.on('edge:move', this.onEdgeMove, this)
@@ -429,8 +427,6 @@ export class Selection
     this.graph.off('blank:click', this.onBlankClick, this)
     this.graph.off('cell:mousedown', this.onCellMouseDown, this)
     this.selectionImpl.off('box:mousedown', this.onBoxMouseDown, this)
-
-    // fromgoup (need moving)
     this.graph.off('node:move', this.onNodeMove, this)
     this.graph.off('node:moved', this.onNodeMoved, this)
     this.graph.off('edge:move', this.onEdgeMove, this)
@@ -610,9 +606,7 @@ export class Selection
         this.graph.select(child)
         //  this.moveSelected.push(child);
 
-        child.isNode() &&
-          // typeof this.graph['clearTransformWidget'] === 'function' &&
-          this.graph.clearTransformWidget?.(child)
+        child.isNode() && this.graph.clearTransformWidget(child)
         this.graph.unselect(parent) // pseudo unselection for children- bit of a hack
       })
     }
