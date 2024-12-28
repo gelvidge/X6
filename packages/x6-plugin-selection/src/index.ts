@@ -308,7 +308,7 @@ export class Selection
     })
   }
 
-  groupCells(cells: Cell[]): void {
+  groupCells(cells: Cell[]) {
     const padding = 0
     const childArray: Cell[] = []
     cells.forEach((cell) => {

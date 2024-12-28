@@ -46,8 +46,8 @@ declare module '@antv/x6/lib/graph/graph' {
     getRootNode: (cell: Cell) => Cell | null
     getRootsNodes: (cells: Cell[]) => Cell[]
     getRootGroupNodes: (cells: Cell[]) => Cell[]
-    groupCells: (cells: Cell[]) => Cell | null
-    unGroupCells: (cells: Cell[]) => void | null
+    groupCells: (cells: Cell[]) => void
+    unGroupCells: (cells: Cell[]) => void
     updateGroupBounds: (cell: Cell) => void | null
   }
 }
@@ -343,16 +343,10 @@ Graph.prototype.getRootsNodes = function (cells: Cell[]) {
 
 Graph.prototype.groupCells = function (cells: Cell[]) {
   const group = this.getPlugin('selection') as Selection
-  if (group) {
-    return group.groupCells(cells)
-  }
-  return null
+  group.groupCells(cells)
 }
 
 Graph.prototype.unGroupCells = function (cells: Cell[]) {
   const group = this.getPlugin('selection') as Selection
-  if (group) {
-    return group.unGroupCells(cells)
-  }
-  return null
+  group.unGroupCells(cells)
 }
