@@ -1,8 +1,14 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+/* eslint-disable @typescript-eslint/no-shadow */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-classes-per-file */
+
 import {
   KeyValue,
   ObjectExt,
   FunctionExt,
   Basecoat,
+  IDisablable,
   Cell,
   Model,
   Graph,
@@ -11,7 +17,7 @@ import './api'
 
 export class History
   extends Basecoat<History.EventArgs>
-  implements Graph.Plugin
+  implements IDisablable
 {
   public name = 'history'
   public graph: Graph
@@ -31,7 +37,7 @@ export class History
     args: Model.EventArgs[T],
   ) => any)[] = []
 
-  constructor(options: History.Options = {}) {
+  constructor(options: History.Options) {
     super()
     const { stackSize = 0 } = options
     this.stackSize = stackSize
@@ -45,6 +51,9 @@ export class History
   init(graph: Graph) {
     this.graph = graph
     this.model = this.graph.model
+
+    this.redoStack = []
+    this.undoStack = []
 
     this.clean()
     this.startListening()
@@ -60,6 +69,15 @@ export class History
     if (this.disabled) {
       this.options.enabled = true
     }
+  }
+
+  // following 2 methods are added by GE
+  getUndoStack() {
+    return this.undoStack
+  }
+
+  getRedoStack() {
+    return this.redoStack
   }
 
   disable() {
@@ -86,10 +104,18 @@ export class History
     return this
   }
 
+  addUndo(undoStack: History.Commands[]) {
+    this.undoStack = [...this.undoStack, ...undoStack]
+  }
+
   undo(options: KeyValue = {}) {
     if (!this.disabled) {
       const cmd = this.undoStack.pop()
-      if (cmd) {
+      if (cmd && !Array.isArray(cmd) && typeof cmd.undo !== 'undefined') {
+        cmd.undo()
+        this.redoStack.push(cmd)
+        this.notify('undo', null, options)
+      } else if (cmd) {
         this.revertCommand(cmd, options)
         this.redoStack.push(cmd)
         this.notify('undo', cmd, options)
@@ -101,7 +127,11 @@ export class History
   redo(options: KeyValue = {}) {
     if (!this.disabled) {
       const cmd = this.redoStack.pop()
-      if (cmd) {
+      if (cmd && !Array.isArray(cmd) && typeof cmd.redo !== 'undefined') {
+        cmd.redo()
+        this.undoStack.push(cmd)
+        this.notify('redo', null, options)
+      } else if (cmd) {
         this.applyCommand(cmd, options)
         this.undoStackPush(cmd)
         this.notify('redo', cmd, options)
@@ -117,7 +147,11 @@ export class History
   cancel(options: KeyValue = {}) {
     if (!this.disabled) {
       const cmd = this.undoStack.pop()
-      if (cmd) {
+      if (cmd && !Array.isArray(cmd) && typeof cmd.undo !== 'undefined') {
+        cmd.undo()
+        this.redoStack = []
+        this.notify('cancel', null, options)
+      } else if (cmd) {
         this.revertCommand(cmd, options)
         this.redoStack = []
         this.notify('cancel', cmd, options)
@@ -241,50 +275,39 @@ export class History
     revert: boolean,
     options: KeyValue,
   ) {
-    const model = this.model
-    // const cell = cmd.modelChange ? model : model.getCell(cmd.data.id!)
-    const cell = model.getCell(cmd.data.id!)
-    const event = cmd.event
+    if (cmd.data) {
+      const { model } = this
+      // const cell = cmd.modelChange ? model : model.getCell(cmd.data.id!)
+      const cell = model.getCell(cmd.data.id!)
+      const { event } = cmd
 
-    if (
-      (Util.isAddEvent(event) && revert) ||
-      (Util.isRemoveEvent(event) && !revert)
-    ) {
-      cell && cell.remove(options)
-    } else if (
-      (Util.isAddEvent(event) && !revert) ||
-      (Util.isRemoveEvent(event) && revert)
-    ) {
-      const data = cmd.data as History.CreationData
-      if (data.node) {
-        model.addNode(data.props, options)
-      } else if (data.edge) {
-        model.addEdge(data.props, options)
-      }
-    } else if (Util.isChangeEvent(event)) {
-      const data = cmd.data as History.ChangingData
-      const key = data.key
-      if (key && cell) {
-        const value = revert ? data.prev[key] : data.next[key]
-
-        if (data.key === 'attrs') {
-          const hasUndefinedAttr = this.ensureUndefinedAttrs(
-            value,
-            revert ? data.next[key] : data.prev[key],
-          )
-          if (hasUndefinedAttr) {
-            // recognize a `dirty` flag and re-render itself in order to remove
-            // the attribute from SVGElement.
-            options.dirty = true
-          }
+      if (
+        (Util.isAddEvent(event) && revert) ||
+        (Util.isRemoveEvent(event) && !revert)
+      ) {
+        cell && cell.remove(options)
+      } else if (
+        (Util.isAddEvent(event) && !revert) ||
+        (Util.isRemoveEvent(event) && revert)
+      ) {
+        const data = cmd.data as History.CreationData
+        if (data.node) {
+          model.addNode(data.props, options)
+        } else if (data.edge) {
+          model.addEdge(data.props, options)
         }
-
-        cell.prop(key, value, options)
-      }
-    } else {
-      const executeCommand = this.options.executeCommand
-      if (executeCommand) {
-        FunctionExt.call(executeCommand, this, cmd, revert, options)
+      } else if (Util.isChangeEvent(event)) {
+        const data = cmd.data as History.ChangingData
+        const { key } = data
+        if (key && cell) {
+          const value = revert ? data.prev[key] : data.next[key]
+          cell.prop(key, value, options)
+        }
+      } else {
+        const { executeCommand } = this.options
+        if (executeCommand) {
+          FunctionExt.call(executeCommand, this, cmd, revert, options)
+        }
       }
     }
   }
@@ -326,7 +349,7 @@ export class History
       event = `cell:change:${eventArgs.key}` as T
     }
 
-    const cell = eventArgs.cell
+    const { cell } = eventArgs
     const isModelChange = Model.isModel(cell)
     let cmd: History.Command
 
@@ -334,7 +357,9 @@ export class History
       // In most cases we are working with same object, doing
       // same action etc. translate an object piece by piece.
       cmd = this.batchCommands[Math.max(this.lastBatchIndex, 0)]
-
+      if (cmd.data === undefined) {
+        return
+      }
       // Check if we are start working with new object or performing different
       // action with it. Note, that command is uninitialized when lastCmdIndex
       // equals -1. In that case we are done, command we were looking for is
@@ -349,6 +374,7 @@ export class History
         // action with the object as we are doing now with cell.
         const index = this.batchCommands.findIndex(
           (cmd) =>
+            cmd.data !== undefined &&
             ((isModelChange && cmd.modelChange) || cmd.data.id === cell.id) &&
             cmd.event === event,
         )
@@ -386,7 +412,7 @@ export class History
     // change:*
     // --------
     if (Util.isChangeEvent(event)) {
-      const key = (args as Model.EventArgs['cell:change:*']).key
+      const { key } = args as Model.EventArgs['cell:change:*']
       const data = cmd.data as History.ChangingData
 
       if (!cmd.batch || !cmd.event) {
@@ -416,7 +442,7 @@ export class History
 
     // others
     // ------
-    const afterAddCommand = this.options.afterAddCommand
+    const { afterAddCommand } = this.options
     if (afterAddCommand) {
       FunctionExt.call(afterAddCommand, this, event, args, cmd)
     }
@@ -456,7 +482,7 @@ export class History
       const cmds = this.filterBatchCommand(this.batchCommands)
       if (cmds.length > 0) {
         this.redoStack = []
-        this.undoStackPush(cmds)
+        this.undoStack.push(cmds)
         this.consolidateCommands()
         this.notify('add', cmds, options)
       }
@@ -475,21 +501,29 @@ export class History
     while (cmds.length > 0) {
       const cmd = cmds.shift()!
       const evt = cmd.event
-      const id = cmd.data.id
+      const id = cmd.data?.id || null
 
       if (evt != null && (id != null || cmd.modelChange)) {
         if (Util.isAddEvent(evt)) {
           const index = cmds.findIndex(
-            (c) => Util.isRemoveEvent(c.event) && c.data.id === id,
+            (c) =>
+              c.data !== undefined &&
+              Util.isRemoveEvent(c.event) &&
+              c.data.id === id,
           )
 
           if (index >= 0) {
-            cmds = cmds.filter((c, i) => index < i || c.data.id !== id)
+            cmds = cmds.filter(
+              (c, i) => c.data !== undefined && (index < i || c.data.id !== id),
+            )
             continue
           }
         } else if (Util.isRemoveEvent(evt)) {
           const index = cmds.findIndex(
-            (c) => Util.isAddEvent(c.event) && c.data.id === id,
+            (c) =>
+              Util.isAddEvent(c.event) &&
+              c.data !== undefined &&
+              c.data.id === id,
           )
           if (index >= 0) {
             cmds.splice(index, 1)
@@ -530,7 +564,7 @@ export class History
       this.lastBatchIndex = Math.max(this.lastBatchIndex, 0)
       this.emit('batch', { cmd, options })
     } else {
-      this.undoStackPush(cmd)
+      this.undoStack.push(cmd)
       this.consolidateCommands()
       this.notify('add', cmd, options)
     }
@@ -633,7 +667,7 @@ export class History
     return hasUndefinedAttr
   }
 
-  @Basecoat.dispose()
+  // @Basecoat.dispose()
   dispose() {
     this.validator.dispose()
     this.clean()
@@ -711,8 +745,10 @@ export namespace History {
     batch: boolean
     modelChange?: boolean
     event?: ModelEvents
-    data: CreationData | ChangingData
+    data?: CreationData | ChangingData
     options?: KeyValue
+    undo?: (options?: KeyValue<any>) => History | null
+    redo?: (options?: KeyValue<any>) => History | null
   }
 
   export type Commands = History.Command[] | History.Command
@@ -804,7 +840,6 @@ export namespace History {
               fn(err, cmd, rollup)
             } else {
               handoverErr = err
-              return
             }
           } catch (err) {
             rollup(err)
@@ -905,7 +940,6 @@ namespace Util {
       : reservedNames
 
     return {
-      enabled: true,
       ...options,
       eventNames,
       applyOptionsList: options.applyOptionsList || ['propertyPath'],
@@ -920,9 +954,9 @@ namespace Util {
       let index: number | null = null
 
       if (Util.isAddEvent(cmd.event)) {
-        const id = cmd.data.id
+        const id = cmd.data?.id || null
         for (let j = 0; j < i; j += 1) {
-          if (cmds[j].data.id === id) {
+          if (cmds[j].data !== undefined && cmds[j].data?.id === id) {
             index = j
             break
           }
