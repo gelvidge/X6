@@ -41,6 +41,9 @@
   "peerDependencies": {
     "@antv/x6": "file:..\\x6"
   },
+  "dependencies": {
+    "@antv/x6-plugin-transform": "file:..\\x6-plugin-transform"
+  },
   "devDependencies": {
     "@antv/x6": "file:..\\x6"
   },

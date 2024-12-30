@@ -8,8 +8,8 @@ import {
   EventArgs,
   Graph,
 } from '@antv/x6'
+import { Transform } from '@antv/x6-plugin-transform'
 import { SelectionImpl } from './selection'
-import { Transform } from '../../x6-plugin-transform/src'
 import { content } from './style/raw'
 import './api'
 
@@ -49,12 +49,13 @@ export class Selection
       ...Selection.defaultOptions,
       ...options,
     }
-    this.graph.getPlugin('transform') as Transform
+
     CssLoader.ensure(this.name, content)
   }
 
   public init(graph: Graph) {
     this.graph = graph
+    this.graph.getPlugin('transform') as Transform
     this.dcSelected = []
     // this.moveSelected=[]
     this.selectionImpl = new SelectionImpl({

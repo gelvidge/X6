@@ -114,7 +114,7 @@ export class History
       if (cmd && !Array.isArray(cmd) && typeof cmd.undo !== 'undefined') {
         cmd.undo()
         this.redoStack.push(cmd)
-        this.notify('undo', null, options)
+        this.notify('undo', cmd, options)
       } else if (cmd) {
         this.revertCommand(cmd, options)
         this.redoStack.push(cmd)
@@ -130,7 +130,7 @@ export class History
       if (cmd && !Array.isArray(cmd) && typeof cmd.redo !== 'undefined') {
         cmd.redo()
         this.undoStack.push(cmd)
-        this.notify('redo', null, options)
+        this.notify('redo', cmd, options)
       } else if (cmd) {
         this.applyCommand(cmd, options)
         this.undoStackPush(cmd)
@@ -150,7 +150,7 @@ export class History
       if (cmd && !Array.isArray(cmd) && typeof cmd.undo !== 'undefined') {
         cmd.undo()
         this.redoStack = []
-        this.notify('cancel', null, options)
+        this.notify('cancel', cmd, options)
       } else if (cmd) {
         this.revertCommand(cmd, options)
         this.redoStack = []
@@ -239,6 +239,7 @@ export class History
   }
 
   protected revertCommand(cmd: History.Commands, options?: KeyValue) {
+    if (!Array.isArray(cmd) && typeof cmd.undo !== undefined) return
     this.freezed = true
 
     const cmds = Array.isArray(cmd) ? Util.sortBatchCommands(cmd) : [cmd]
@@ -255,6 +256,7 @@ export class History
   }
 
   protected applyCommand(cmd: History.Commands, options?: KeyValue) {
+    if (!Array.isArray(cmd) && typeof cmd.undo !== undefined) return
     this.freezed = true
 
     const cmds = Array.isArray(cmd) ? Util.sortBatchCommands(cmd) : [cmd]
