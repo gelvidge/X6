@@ -108,11 +108,11 @@ export class Scheduler extends Disposable {
     viewItem.options = options
 
     const priorAction = view.hasAction(flag, [
+      'source',
+      'target',
       'translate',
       'resize',
       'rotate',
-      'source',
-      'target',
     ])
 
     if (priorAction || options.async === false) {

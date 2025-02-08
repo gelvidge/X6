@@ -129,7 +129,7 @@ export class History
       const cmd = this.redoStack.pop()
       if (cmd && !Array.isArray(cmd) && typeof cmd.redo !== 'undefined') {
         cmd.redo()
-        this.undoStack.push(cmd)
+        // this.undoStackPush(cmd) : does not need to be done for lexical since redo() will trigger changingHistory and update undo stack
         this.notify('redo', cmd, options)
       } else if (cmd) {
         this.applyCommand(cmd, options)
