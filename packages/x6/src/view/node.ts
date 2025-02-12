@@ -17,10 +17,6 @@ export class NodeView<
   Options extends NodeView.Options = NodeView.Options,
 > extends CellView<Entity, Options> {
   protected portsCache: { [id: string]: NodeView.PortCache } = {}
-
-  protected totalDx = 0
-  protected totalDy = 0
-
   protected get [Symbol.toStringTag]() {
     return NodeView.toStringTag
   }

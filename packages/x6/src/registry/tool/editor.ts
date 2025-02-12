@@ -64,6 +64,7 @@ export class CellEditor extends ToolsView.ToolItem<
     style.fontFamily = attrs.fontFamily
     style.color = attrs.color
     style.backgroundColor = attrs.backgroundColor
+    style.cursor = 'text'
 
     // set init value
     const text = this.getCellText() || ''
@@ -268,6 +269,11 @@ export class CellEditor extends ToolsView.ToolItem<
   }
 
   protected onRemove() {
+    /// the following 2 lines are added to ensure label is caqptured when the editor is removed
+    const value = this.editor?.innerText.replace(/\n$/, '') || ''
+    this.setCellText(value !== '' ? value : null)
+
+    // set value, when value is null, we will remove label in edge
     const cellView = this.cellView as CellView
     if (cellView) {
       cellView.off('cell:dblclick', this.dblClick)

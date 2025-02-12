@@ -607,10 +607,14 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
     this.collection.toArray().forEach((item) => {
       const cellView = this.graph.findViewByCell(item.id)
-      if (item.id !== cell.id && cellView) {
+      if (
+        item.id !== cell.id &&
+        cellView &&
         item.isEdge() &&
-          Dom.translate(cellView.container, -this.totalDx, -this.totalDy) // to offset the css translation caused by updating the model (only applies to edges)
-
+        !item.getTargetCell() &&
+        !item.getSourceCell()
+      ) {
+        Dom.translate(cellView.container, -this.totalDx, -this.totalDy) // to offset the css translation caused by updating the model (only applies to edges)
         item.translate(this.totalDx, this.totalDy)
       }
     })
@@ -661,19 +665,29 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         //   exclude: excluded,
         // }
         const cellView = this.graph.findViewByCell(cell.id)
+        const item = cellView?.cell
 
-        if (cellView) {
+        if (cellView && item?.isNode()) {
           Dom.translate(cellView.container, dx, dy)
+          const position = item.prop('position') || { x: 0, y: 0 }
+          item.prop('position', {
+            x: position.x + dx,
+            y: position.y + dy,
+          })
+        } else if (
+          cellView &&
+          item?.isEdge() &&
+          !item.getTargetCell() &&
+          !item.getSourceCell()
+        ) {
+          Dom.translate(cellView.container, dx, dy)
+        } else if (cellView && item?.isEdge() && !item.getTargetCell()) {
+          const target = item.prop('target') || { x: 0, y: 0 }
+          item.prop('target', { x: target.x + dx, y: target.y + dy })
+        } else if (cellView && item?.isEdge() && !item.getSourceCell()) {
+          const source = item.prop('source') || { x: 0, y: 0 }
+          item.prop('source', { x: source.x + dx, y: source.y + dy })
         }
-
-        this.graph.model.getConnectedEdges(cell).forEach((edge) => {
-          if (!map[edge.id]) {
-            const edgeView = this.graph.findViewByCell(edge.id)
-            edgeView && Dom.translate(edgeView.container, dx, dy)
-
-            map[edge.id] = true
-          }
-        })
       }
     })
   }
