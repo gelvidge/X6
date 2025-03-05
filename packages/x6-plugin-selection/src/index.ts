@@ -18,9 +18,11 @@ export class Selection
   implements Graph.Plugin
 {
   public name = 'selection'
-  private dcSelected: Cell[]
-  // private moveSelected: []
+  // private dcSelected: Cell[]
+
   private graph: Graph
+  private blockClick: Cell[]
+  private movingSelectedCells: Cell[]
   private selectionImpl: SelectionImpl
   private readonly options: Selection.Options
   private movedMap = new WeakMap<Cell, boolean>()
@@ -56,8 +58,8 @@ export class Selection
   public init(graph: Graph) {
     this.graph = graph
     this.graph.getPlugin('transform') as Transform
-    this.dcSelected = []
-    // this.moveSelected=[]
+    this.blockClick = []
+    this.movingSelectedCells = []
     this.selectionImpl = new SelectionImpl({
       ...this.options,
       graph,
@@ -265,7 +267,15 @@ export class Selection
     return this
   }
 
-  getSelectedCells() {
+  getSelectedCells(includeChildren = false) {
+    if (includeChildren) {
+      const cellsWithChildren: Cell<Cell.Properties>[] = []
+      this.cells.forEach((cell) => {
+        const children = cell.getDescendants()
+        cellsWithChildren.push(cell, ...children)
+      })
+      return cellsWithChildren
+    }
     return this.cells
   }
 
@@ -315,7 +325,6 @@ export class Selection
     cells.forEach((cell) => {
       if (!cell.hasParent()) {
         childArray.push(cell)
-        cell.prop('groupedNode', true)
       }
     })
 
@@ -347,15 +356,13 @@ export class Selection
       if (typeof (this.graph as any).resetSelection === 'function') {
         ;(this.graph as any).resetSelection(parent)
       }
-
-      parent.prop('parentNode', true)
     }
   }
 
   unGroupCells(cells: Cell[]) {
     const groupArray: Cell[] = []
     cells.forEach((cell) => {
-      if (!cell.hasParent() && cell.prop('parentNode')) {
+      if (!cell.hasParent() && cell.getChildren()) {
         groupArray.push(cell)
       }
     })
@@ -366,7 +373,6 @@ export class Selection
 
     groupArray.forEach((group) => {
       const children = group.getChildren()
-      children?.forEach((child) => child.prop('groupedNode', false))
       children && this.graph.select(children)
       group.setChildren(null)
       group.remove()
@@ -374,10 +380,10 @@ export class Selection
   }
 
   getRootNode(cell: Cell): Cell | null {
-    let root = null
-    if (!cell.hasParent()) return null
-    while (cell.hasParent()) {
-      root = cell.getParent()
+    let root: Cell | null = cell
+    if (!root.hasParent()) return null
+    while (root?.hasParent()) {
+      root = root.getParent()
     }
     return root
   }
@@ -385,7 +391,7 @@ export class Selection
   getRootsNodes(cells: Cell[]): Cell[] {
     const rootParentNodes: Cell[] = []
     cells.forEach((cell: Cell) => {
-      if (!cell.hasParent() && cell.prop('parentNode')) {
+      if (!cell.hasParent() && cell.getChildren()) {
         rootParentNodes.push(cell)
       }
     })
@@ -404,9 +410,22 @@ export class Selection
     const cells = this.graph.getSelectedCells()
     const array = [] as Cell[]
     cells.forEach((cell) => {
-      if (cell.prop('parentNode')) array.push(cell)
+      if (cell.getChildren()) array.push(cell)
     })
     return array
+  }
+
+  protected cellsSelectedOutsideGroup(cell: Cell): number {
+    const cells = this.graph.getSelectedCells()
+    const root = this.graph.getRootNode(cell) || cell
+    const children = root.getDescendants() || []
+    let count = 0
+    children.forEach((child) => {
+      if (this.isSelected(child) && child.getDescendants().length === 0)
+        count += 1
+    })
+
+    return cells.length - count
   }
 
   protected startListening() {
@@ -437,88 +456,170 @@ export class Selection
     this.graph.off('cell:unselected', this.onCellUnselected, this)
   }
 
+  protected onCellMouseDown({ e, cell }: EventArgs['cell:mousedown']) {
+    let parent: Cell | null = null
+    if (typeof (this.graph as any).getRootNode === 'function') {
+      parent = (this.graph as any).getRootNode(cell)
+    }
+
+    const { options } = this
+    let { disabled } = this
+    if (!disabled && this.movedMap.has(cell)) {
+      disabled = options.selectCellOnMoved === false
+
+      if (!disabled) {
+        disabled = options.selectNodeOnMoved === false && cell.isNode()
+      }
+
+      if (!disabled) {
+        disabled = options.selectEdgeOnMoved === false && cell.isEdge()
+      }
+    }
+    const selectedCells = this.graph.getSelectedCells()
+    if (!disabled) {
+      if (parent) {
+        let selectedChildCount = 0
+        const children = parent?.getDescendants()
+        children &&
+          children.forEach((child: Cell) => {
+            if (this.isSelected(child)) selectedChildCount += 1
+          })
+        if (!this.isSelected(cell) && !this.isSelected(parent) && e.ctrlKey) {
+          this.select(parent)
+          selectedCells.forEach((lcell) => {
+            lcell.hasParent() && this.unselect(lcell)
+          })
+          this.blockClick.push(cell)
+        } else if (
+          !this.isSelected(cell) &&
+          !this.isSelected(parent) &&
+          !e.ctrlKey
+        ) {
+          this.reset(parent)
+          this.blockClick.push(cell)
+        } else if (
+          this.isSelected(cell) &&
+          this.isSelected(parent) &&
+          e.ctrlKey
+        ) {
+          this.unselect(cell)
+          this.blockClick.push(cell)
+        } else if (
+          !this.isSelected(cell) &&
+          this.isSelected(parent) &&
+          e.ctrlKey
+        ) {
+          let isolatedCellCount = 0
+          selectedCells.forEach((lcell) => {
+            if (!lcell.hasParent()) {
+              // a single isolated, selected cell
+              parent && this.unselect(parent)
+              isolatedCellCount += 1
+            }
+            if (lcell.hasParent() && !lcell.isDescendantOf(parent)) {
+              this.unselect(lcell)
+            }
+
+            // if (lcell.hasParent()) {
+            //   parent && this.unselect(parent)
+            //   cellCount++
+            // }
+          })
+
+          if (isolatedCellCount <= 1) {
+            this.select(cell)
+            parent && this.select(parent)
+          }
+          this.blockClick.push(cell)
+        } else if (
+          this.isSelected(parent) && /// **only when a child is selected */
+          !this.isSelected(cell) &&
+          !e.ctrlKey &&
+          selectedChildCount > 0
+        ) {
+          this.reset(cell)
+          this.select(parent)
+          this.blockClick.push(cell)
+        }
+      } else {
+        if (!this.isSelected(cell) && !e.ctrlKey) {
+          this.reset(cell)
+          this.blockClick.push(cell)
+        } else if (!this.isSelected(cell) && e.ctrlKey) {
+          selectedCells.forEach((lcell) => {
+            lcell.hasParent() && this.unselect(lcell)
+          })
+          this.select(cell)
+          this.blockClick.push(cell)
+        } else if (this.isSelected(cell) && e.ctrlKey) {
+          this.unselect(cell)
+          this.blockClick.push(cell)
+        } else if (this.isSelected(cell) && !e.ctrlKey) {
+          this.blockClick.push(cell)
+        }
+      }
+    }
+  }
+
   protected onCellClick({ e, cell }: EventArgs['cell:click']) {
-    const parent = this.getRootNode(cell)
-    if (!parent) return
-    const group = this.getSelectedParentCells()
-    if (group.length > 1) {
-      group.forEach((cell) => {
-        this.graph.unselect(cell.getDescendants({ deep: true }))
-      })
+    if (this.blockClick.includes(cell)) {
+      this.blockClick = []
       return
     }
-    if (this.graph.isSelected(cell)) {
-      this.graph.unselect(cell)
-    } else if (!this.graph.isSelected(cell) && e.ctrlKey) {
-      this.graph.select(cell)
-    } else if (!this.graph.isSelected(cell) && this.dcSelected.includes(cell)) {
-      this.graph.resetSelection([parent, cell])
-      this.dcSelected = []
-    } else if (!this.graph.isSelected(cell)) {
-      this.dcSelected.push(cell)
+    let parent = null
+    if (typeof (this.graph as any).getRootNode === 'function') {
+      parent = (this.graph as any).getRootNode(cell)
+    }
+    if (this.isSelected(parent) && !this.isSelected(cell) && !e.ctrlKey) {
+      // only when a child is not selected
+      this.reset(cell)
+      this.select(parent)
+    } else if (this.cellsSelectedOutsideGroup(cell) === 0) {
+      if (this.isSelected(parent) && !this.isSelected(cell) && e.ctrlKey) {
+        this.select(cell)
+      } else if (
+        this.isSelected(parent) &&
+        this.isSelected(cell) &&
+        e.ctrlKey
+      ) {
+        this.unselect(cell)
+      }
+    } else if (
+      this.cellsSelectedOutsideGroup(cell) > 0 &&
+      this.isSelected(parent) &&
+      !this.isSelected(cell) &&
+      e.ctrlKey
+    ) {
+      this.unselect(parent)
     }
   }
 
   protected onCellUnselected({
     cell,
   }: SelectionImpl.SelectionEventArgs['cell:unselected']) {
-    this.dcSelected = []
-    if (cell.prop('parentNode')) {
+    // this.dcSelected = []
+    if (cell.getChildren()) {
       cell.setAttrs({
         body: { visibility: 'hidden' },
       })
     }
+    cell.isNode() && this.graph.clearTransformWidget(cell)
   }
 
   protected onCellSelected({
     cell,
   }: SelectionImpl.SelectionEventArgs['cell:selected']) {
-    if (cell.prop('parentNode')) {
+    cell.isNode() && this.graph.createTransformWidget(cell, true)
+    if (cell.getChildren()) {
       cell.setAttrs({
         body: { visibility: 'visible' },
       })
-      const children = cell.getDescendants({ deep: true })
-      this.graph.unselect(children)
-    }
-  }
 
-  protected onCellMouseDown({ e, cell }: EventArgs['cell:mousedown']) {
-    let parent = null
-    if (typeof (this.graph as any).getRootNode === 'function') {
-      parent = (this.graph as any).getRootNode(cell)
-    }
-
-    if (parent) {
-      if (!this.graph.isSelected(parent) && e.ctrlKey) {
-        this.graph.select(parent)
-      } else if (!this.graph.isSelected(parent)) {
-        this.graph.resetSelection(parent)
-      } else this.dcSelected.push(cell)
-    } else {
-      const { options } = this
-      let { disabled } = this
-      if (!disabled && this.movedMap.has(cell)) {
-        disabled = options.selectCellOnMoved === false
-
-        if (!disabled) {
-          disabled = options.selectNodeOnMoved === false && cell.isNode()
-        }
-
-        if (!disabled) {
-          disabled = options.selectEdgeOnMoved === false && cell.isEdge()
-        }
-      }
-
-      if (!disabled) {
-        if (!e.ctrlKey && !this.isSelected(cell)) {
-          this.graph.resetSelection(cell)
-        } // ctrl not pressed, no parent and multiple cells not selected
-        else if (e.ctrlKey && this.isSelected(cell)) {
-          this.unselect(cell)
-        } else if (e.ctrlKey && this.allowMultipleSelection(e)) {
-          this.select(cell)
-        }
-      }
+      // const children = cell.getDescendants()
+      // children.forEach((child) => {
+      //   child.isNode() && this.graph.clearTransformWidget(child)
+      // })
+      // this.graph.unselect(children)
     }
   }
 
@@ -566,78 +667,123 @@ export class Selection
 
   updateGroupBounds(cell: Cell) {
     const ancestors = cell.getAncestors({ deep: true })
-    ancestors.forEach((ancestor: Cell) => {
-      const bbox = this.graph.model.getCellsBBox(
-        ancestor.getDescendants({ deep: true }),
-      )
-      this.graph.isNode(ancestor) &&
-        bbox &&
-        ancestor.size(bbox.width, bbox.height)
-      this.graph.isNode(ancestor) && bbox && ancestor.position(bbox.x, bbox.y)
-    })
+    if (ancestors.length) {
+      ancestors.forEach((ancestor: Cell) => {
+        const bbox = this.graph.model.getCellsBBox(ancestor.getDescendants())
+        this.graph.isNode(ancestor) &&
+          bbox &&
+          ancestor.size(bbox.width, bbox.height)
+        this.graph.isNode(ancestor) && bbox && ancestor.position(bbox.x, bbox.y)
+      })
+    } else {
+      const descendants = cell.getDescendants()
+      const bbox = this.graph.model.getCellsBBox(descendants)
+
+      this.graph.isNode(cell) && bbox && cell.size(bbox.width, bbox.height)
+      this.graph.isNode(cell) && bbox && cell.position(bbox.x, bbox.y)
+    }
   }
 
-  protected onNodeMove({ node }: EventArgs['node:move']) {
-    const parent = this.getRootNode(node)
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    if (this.graph.isSelected(node)) {
-      this.graph.resetSelection(node)
-      // this.moveSelected.push(node);
-    } else {
-      children?.forEach((child) => {
-        this.graph.select(child)
-        //  this.moveSelected.push(child);
+  protected firstCell = true
 
-        child.isNode() && this.graph.clearTransformWidget(child)
-        this.graph.unselect(parent) // pseudo unselection for children- bit of a hack
-      })
+  protected onNodeMove({ node }: EventArgs['node:move']) {
+    if (!this.firstCell) return
+    this.movingSelectedCells = []
+    const cells = this.getSelectedCells()
+
+    cells.forEach((cell) => {
+      !this.movingSelectedCells.includes(cell) &&
+        this.movingSelectedCells.push(cell)
+      cell.isNode() && this.graph.clearTransformWidget(cell)
+      const children = cell.getDescendants()
+
+      if (children) {
+        let selectedChildren = 0
+        children.forEach((child) => {
+          if (this.isSelected(child)) selectedChildren += 1
+        })
+        if (selectedChildren === 0) {
+          children.forEach((child) => {
+            !this.isSelected(child) && this.select(child)
+            child.isNode() && this.graph.clearTransformWidget(child)
+          })
+        } else {
+          this.unselect(cell)
+        }
+      }
+    })
+
+    if (!this.isSelected(node)) {
+      const parentNode = this.getRootNode(node)
+      if (parentNode) {
+        const children = parentNode.getDescendants()
+        children.forEach((child) => {
+          this.select(child)
+          child.isNode() && this.graph.clearTransformWidget(child)
+        })
+      }
     }
+    this.firstCell = false
   }
 
   protected onEdgeMove({ edge }: EventArgs['edge:move']) {
-    const parent = this.getRootNode(edge)
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    if (this.graph.isSelected(edge)) {
-      this.graph.resetSelection(edge)
-      // this.moveSelected.push(node);
-    } else {
-      children?.forEach((child) => {
-        this.graph.select(child)
-        //  this.moveSelected.push(child);
+    if (!this.firstCell) return
+    this.movingSelectedCells = []
+    const cells = this.getSelectedCells()
 
-        child.isNode() && this.graph.clearTransformWidget(child)
-        this.graph.unselect(parent) // pseudo unselection for children- bit of a hack
-      })
+    cells.forEach((cell) => {
+      !this.movingSelectedCells.includes(cell) &&
+        this.movingSelectedCells.push(cell)
+      cell.isNode() && this.graph.clearTransformWidget(cell)
+      const children = cell.getDescendants()
+
+      if (children) {
+        let selectedChildren = 0
+        children.forEach((child) => {
+          if (this.isSelected(child)) selectedChildren += 1
+        })
+        if (selectedChildren === 0) {
+          children.forEach((child) => {
+            !this.isSelected(child) && this.select(child)
+            child.isNode() && this.graph.clearTransformWidget(child)
+          })
+        } else {
+          this.unselect(cell)
+        }
+      }
+    })
+
+    if (!this.isSelected(edge)) {
+      const parentNode = this.getRootNode(edge)
+      if (parentNode) {
+        const children = parentNode.getDescendants()
+        children.forEach((child) => {
+          this.select(child)
+          child.isNode() && this.graph.clearTransformWidget(child)
+        })
+      }
     }
+    this.firstCell = false
   }
 
-  protected onNodeMoved({ node }: EventArgs['node:moved']) {
-    const parent = this.getRootNode(node)
-    // this.graph.clearTransformWidget(node);
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    children?.forEach((child) => this.graph.unselect(child))
-    this.graph.select(parent)
-    // if (this.moveSelected.includes(node)) {
-    //     this.graph.select(node);
-    // }
-    // this.moveSelected = [];
-    this.updateGroupBounds(node)
+  protected onNodeMoved() {
+    this.movingSelectedCells.length && this.graph.cleanSelection()
+    this.movingSelectedCells.forEach((cell) => {
+      this.select(cell)
+    })
+    // this.updateGroupBounds(node)
+    this.movingSelectedCells = []
+    this.firstCell = true
   }
 
-  protected onEdgeMoved({ edge }: EventArgs['edge:moved']) {
-    const parent = this.getRootNode(edge)
-    if (!parent) return
-    const children = parent.getDescendants({ deep: true })
-    children?.forEach((child) => this.graph.unselect(child))
-    this.graph.select(parent)
-    // if (this.moveSelected.includes(edge)) {
-    //    this.graph.select(edge);
-    // }
-    // this.moveSelected = [];
-    this.updateGroupBounds(edge)
+  protected onEdgeMoved() {
+    this.movingSelectedCells.length && this.graph.cleanSelection()
+    this.movingSelectedCells.forEach((cell) => {
+      this.select(cell)
+    })
+    // this.updateGroupBounds(edge)
+    this.movingSelectedCells = []
+    this.firstCell = true
   }
 
   protected startRubberband(e: Dom.MouseDownEvent) {

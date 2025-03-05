@@ -24,8 +24,8 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   protected totalDx: number
   protected totalDy: number
   protected notifyTranslate: boolean
-  protected draggedCell: Cell
   protected numCellsUpdated: number
+  protected translatingCells: Cell[]
   protected boxCount: number
 
   protected boxesUpdated: boolean
@@ -64,6 +64,9 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     }
 
     this.boxCount = 0
+    this.totalDx = 0
+    this.totalDy = 0
+    this.translatingCells = []
 
     this.numCellsUpdated = 0
     this.notifyTranslate = true
@@ -85,7 +88,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     )
 
     graph.on('scale', this.onGraphTransformed, this)
-
     graph.on('node:mouseup', this.endTranslate, this) // fires when dragging a node, fires on all selected nodes but not edges
     graph.on('edge:mouseup', this.endTranslate, this) // fires when dragging on edge, does not fire on all edges, does not fire on nodes
     graph.model.on('updated', this.onModelUpdated, this)
@@ -97,7 +99,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
     collection.on('edge:change:source', this.onCellPositionChanged, this) // note this will be a double event when dragging multiple cells
     collection.on('node:change:position', this.onCellPositionChanged, this)
-    // collection.on('cell:changed', this.onCellChanged, this);
     collection.on('node:change:angle', this.onCellChanged, this)
     collection.on('node:change:size', this.onCellChanged, this)
   }
@@ -109,9 +110,8 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.undelegateEvents()
 
     graph.off('scale', this.onGraphTransformed, this)
-
-    graph.off('node:moved', this.endTranslate, this)
-    graph.off('edge:moved', this.endTranslate, this)
+    graph.off('node:mouseup', this.endTranslate, this)
+    graph.off('edge:mouseup', this.endTranslate, this)
     graph.model.off('updated', this.onModelUpdated, this)
 
     collection.off('added', this.onCellAdded, this)
@@ -121,7 +121,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
     collection.off('edge:change:source', this.onCellPositionChanged, this)
     collection.off('node:change:position', this.onCellPositionChanged, this)
-    // collection.off('cell:changed', this.onCellChanged, this); - this can be permantly removed
     collection.off('node:change:angle', this.onCellChanged, this)
     collection.off('node:change:size', this.onCellChanged, this)
   }
@@ -148,8 +147,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     | Collection.EventArgs['node:change:position']) {
     if (!this.notifyTranslate) return
 
-    this.draggedCell = cell
-
     const { showNodeSelectionBox, pointerEvents } = this.options
     const { ui, selection, translateBy, snapped } = options
     const allowTranslating =
@@ -171,6 +168,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
       const dx = current.x - previous.x
       const dy = current.y - previous.y
+      options.translateBy = cell.id
       if (dx !== 0 || dy !== 0) {
         this.translateSelectedNodes(dx, dy, cell, options)
       }
@@ -600,28 +598,69 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.boxesUpdated = false
   }
 
+  protected nodesSelectedInGroup(cell: Cell): number {
+    const root = this.graph.getRootNode(cell) || cell
+    const children = root.getDescendants() || []
+    let count = 0
+    children.forEach((child) => {
+      if (this.isSelected(child) && child.getDescendants().length === 0)
+        count += 1
+    })
+    return count
+  }
+
   protected endTranslate({ cell }: any) {
-    if (this.collection.length <= 1) return
-
     this.notifyTranslate = false
+    // const rootCell = this.graph.getRootNode(cell)
 
-    this.collection.toArray().forEach((item) => {
+    this.translatingCells.forEach((item) => {
+      /// if (item.getDescendants() && item.id === cell.id) return //nodes will translate their own childern but only if the item is the cell being dragged*******************
       const cellView = this.graph.findViewByCell(item.id)
       if (
         item.id !== cell.id &&
         cellView &&
         item.isEdge() &&
         !item.getTargetCell() &&
-        !item.getSourceCell()
+        !item.getSourceCell() &&
+        !item.isDescendantOf(cell)
       ) {
         Dom.translate(cellView.container, -this.totalDx, -this.totalDy) // to offset the css translation caused by updating the model (only applies to edges)
-        item.translate(this.totalDx, this.totalDy)
+        // item.translate(this.totalDx, this.totalDy)
+        const target = item.prop('target') || { x: 0, y: 0 }
+        const source = item.prop('source') || { x: 0, y: 0 }
+        item.prop('target', {
+          x: target.x + this.totalDx,
+          y: target.y + this.totalDy,
+        })
+        item.prop('source', {
+          x: source.x + this.totalDx,
+          y: source.y + this.totalDy,
+        })
+      }
+      const connectedEdges = this.graph.getConnectedEdges(item).length
+
+      // only translate the cells that have not already been translated during
+      if (
+        item.isNode() && // edges are updated elsehere in this function
+        connectedEdges === 0 &&
+        !item.getChildren() && // position of connected nodes is updated during translating cells
+        item.id !== cell.id // dragged cell is updated automatically by drag
+
+        // these are updated in translating cells
+      ) {
+        // item.translate(this.totalDx, this.totalDy, {})
+        const position = item.prop('position') || { x: 0, y: 0 }
+        item.prop('position', {
+          x: position.x + this.totalDx,
+          y: position.y + this.totalDy,
+        })
       }
     })
     this.totalDx = 0
     this.totalDy = 0
-
+    this.graph.updateGroupBounds(cell)
     this.notifyTranslate = true
+    this.translatingCells = []
   }
   // })
 
@@ -631,34 +670,49 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     exclude?: Cell,
     otherOptions?: KeyValue,
   ) {
-    const map: { [id: string]: boolean } = {}
+    const excludedMap: { [id: string]: boolean } = {}
     const excluded: Cell[] = []
 
     if (exclude) {
-      map[exclude.id] = true
+      excludedMap[exclude.id] = true
     }
 
-    this.collection.toArray().forEach((cell) => {
-      cell.getDescendants({ deep: true }).forEach((child) => {
-        map[child.id] = true
-      })
-    })
     if (otherOptions && otherOptions.translateBy) {
       const currentCell = this.graph.getCellById(otherOptions.translateBy)
       if (currentCell) {
-        map[currentCell.id] = true
-        currentCell.getDescendants({ deep: true }).forEach((child) => {
-          map[child.id] = true
+        // exclude the dragged node and it's children since they will be translated by node.translate
+        excludedMap[currentCell.id] = true
+        currentCell.getDescendants().forEach((child) => {
+          excludedMap[child.id] = true
         })
         excluded.push(currentCell)
       }
     }
+    this.collection.toArray().forEach((cell) => {
+      const rootCell = this.graph.getRootNode(cell) || cell
+      const children = rootCell?.getDescendants()
+      !this.translatingCells.includes(rootCell) &&
+        this.translatingCells.push(rootCell)
+      this.nodesSelectedInGroup(rootCell) !== 1 &&
+        children.forEach((child) => {
+          !this.translatingCells.includes(child) &&
+            this.graph.isSelected(child) &&
+            this.translatingCells.push(child)
+        })
+    })
 
     this.totalDx += dx
     this.totalDy += dy
 
-    this.collection.toArray().forEach((cell) => {
-      if (!map[cell.id]) {
+    /// GE 14/2/25 can optimise this code to ensure that functions are not repeated on every single movement
+    this.translatingCells.forEach((cell) => {
+      if (
+        cell.getDescendants().length > 0 &&
+        cell.id === otherOptions?.translateBy.id
+      )
+        return // descendants are translated as children through node.translate
+
+      if (!excludedMap[cell.id]) {
         // const options = {
         //  ...otherOptions,
         //  selection: this.cid,
@@ -666,14 +720,17 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         // }
         const cellView = this.graph.findViewByCell(cell.id)
         const item = cellView?.cell
-
+        const connectedEdges = this.graph.getConnectedEdges(cell).length
         if (cellView && item?.isNode()) {
           Dom.translate(cellView.container, dx, dy)
-          const position = item.prop('position') || { x: 0, y: 0 }
-          item.prop('position', {
-            x: position.x + dx,
-            y: position.y + dy,
-          })
+          if (connectedEdges > 0 || item.getChildren()) {
+            // only update position of nodes with connected edges since these require the correct node position
+            const position = item.prop('position') || { x: 0, y: 0 }
+            item.prop('position', {
+              x: position.x + dx,
+              y: position.y + dy,
+            })
+          }
         } else if (
           cellView &&
           item?.isEdge() &&
@@ -690,6 +747,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         }
       }
     })
+    // })
   }
 
   protected getCellViewsInArea(rect: Rectangle) {
@@ -977,9 +1035,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
   }
 
   protected onReseted({ previous, current }: Collection.EventArgs['reseted']) {
-    this.totalDx = 0
-    this.totalDy = 0
-
     this.destroyAllSelectionBoxes(previous)
     current.forEach((cell) => {
       this.listenCellRemoveEvent(cell)
