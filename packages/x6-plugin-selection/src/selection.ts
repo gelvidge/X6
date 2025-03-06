@@ -625,17 +625,17 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         !item.isDescendantOf(cell)
       ) {
         Dom.translate(cellView.container, -this.totalDx, -this.totalDy) // to offset the css translation caused by updating the model (only applies to edges)
-        // item.translate(this.totalDx, this.totalDy)
-        const target = item.prop('target') || { x: 0, y: 0 }
-        const source = item.prop('source') || { x: 0, y: 0 }
-        item.prop('target', {
-          x: target.x + this.totalDx,
-          y: target.y + this.totalDy,
-        })
-        item.prop('source', {
-          x: source.x + this.totalDx,
-          y: source.y + this.totalDy,
-        })
+        item.translate(this.totalDx, this.totalDy)
+        // const target = item.prop('target') || { x: 0, y: 0 }
+        // const source = item.prop('source') || { x: 0, y: 0 }
+        // item.prop('target', {
+        //   x: target.x + this.totalDx,
+        //   y: target.y + this.totalDy,
+        // })
+        // item.prop('source', {
+        //   x: source.x + this.totalDx,
+        //   y: source.y + this.totalDy,
+        // })
       }
       const connectedEdges = this.graph.getConnectedEdges(item).length
 
@@ -725,7 +725,10 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
           Dom.translate(cellView.container, dx, dy)
           if (connectedEdges > 0 || item.getChildren()) {
             // only update position of nodes with connected edges since these require the correct node position
-            const position = item.prop('position') || { x: 0, y: 0 }
+            const position = item.prop('position') || {
+              x: 0,
+              y: 0,
+            }
             item.prop('position', {
               x: position.x + dx,
               y: position.y + dy,

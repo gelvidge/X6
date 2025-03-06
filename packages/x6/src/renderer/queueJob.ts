@@ -143,7 +143,7 @@ export enum JOB_PRIORITY {
   Update = /*    */ 1 << 1,
   RenderEdge = /**/ 1 << 2,
   RenderNode = /**/ 1 << 3,
-  PRIOR = /*     */ 1 << 20,
+  PRIOR = /*     */ 1 << 20, // highest priority
 }
 
 // function findInsertionIndex(job: Job) {

@@ -700,6 +700,7 @@ export class Edge<
     options.translateBy = options.translateBy || this.id
     options.tx = tx
     options.ty = ty
+    options.async = false // stops delay when dragging edges
     return this.applyToPoints(
       (p) => ({
         x: (p.x || 0) + tx,

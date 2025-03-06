@@ -1185,6 +1185,7 @@ export class Cell<
   }
 
   removeTools(options: Cell.SetOptions = {}) {
+    options.async = false
     this.store.remove('tools', options)
     return this
   }
@@ -1241,6 +1242,7 @@ export class Cell<
 
       if (updated) {
         tools.items = items
+        options.async = false
         this.setTools(tools, options)
       }
     }
