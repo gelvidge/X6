@@ -644,8 +644,8 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         item.isNode() && // edges are updated elsehere in this function
         connectedEdges === 0 &&
         !item.getChildren() && // position of connected nodes is updated during translating cells
-        item.id !== cell.id // dragged cell is updated automatically by drag
-
+        item.id !== cell.id && // dragged cell is updated automatically by drag
+        !item.hasParent()
         // these are updated in translating cells
       ) {
         // item.translate(this.totalDx, this.totalDy, {})
