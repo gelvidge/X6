@@ -678,6 +678,7 @@ export class Selection
     } else {
       const descendants = cell.getDescendants()
       const bbox = this.graph.model.getCellsBBox(descendants)
+      //  cell.isNode() && bbox?.rotate(-cell.getAngle())
 
       this.graph.isNode(cell) && bbox && cell.size(bbox.width, bbox.height)
       this.graph.isNode(cell) && bbox && cell.position(bbox.x, bbox.y)

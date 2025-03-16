@@ -93,43 +93,57 @@ export class Group
 
   protected onNodeRotate({ node }: { node: Node }) {
     node.prop('isRotating', true)
+    !node.prop('startAngle') && node.prop('startAngle', 0)
     const children = node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child: Cell) => {
         if (child.isEdge()) {
-          const source = child.getSourcePoint()
+          const source = child.getSourceCell() ? null : child.getSourcePoint()
           if (source) {
             const sourcePoint = new Point(source.x, source.y)
             child.prop('edgeSourceStart', sourcePoint)
           }
 
-          const target = child.getTargetPoint()
+          const target = child.getTargetCell() ? null : child.getTargetPoint()
           if (target) {
             const targetPoint = new Point(target.x, target.y)
             child.prop('edgeTargetStart', targetPoint)
           }
-        } else {
+        } else if (child.isNode()) {
           child.prop('isRotating', true)
         }
       })
     }
   }
 
-  protected onNodeRotating({ node }: { node: Node }) {
-    // setSelectedNodes((s) => s.map((el, index) => el)); // very slowed cause jumpy ui but required (need momosing) not needed when using Signia
-    const pangle = node.getAngle()
-    // state.setR(pangle);
-    const pcenter = node.getBBox().getCenter()
-    const children = node.getDescendants()
+  protected onNodeRotating(params: any) {
+    const pangle = params.node.getAngle()
+    const startAngle = params.node.prop('startAngle')
+    const pcenter = params.node.getBBox().getCenter()
+    const children = params.node.getDescendants()
     if (children?.length > 0) {
-      children.forEach((child) => {
+      children.forEach((child: Cell) => {
         if (child.getChildren()) return
+        // const childView = this.graph.findViewByCell(child.id)
         if (child.isEdge()) {
-          // console.log(child.prop('edgeSourceStart'));
-          const source = child.prop('edgeSourceStart').clone()
-          const target = child.prop('edgeTargetStart').clone()
-          source && child.setSource(source.rotate(-pangle, pcenter))
-          target && child.setTarget(target.rotate(-pangle, pcenter))
+          const source = child.prop('edgeSourceStart')?.clone() || null
+          const target = child.prop('edgeTargetStart')?.clone() || null
+          source &&
+            child.setSource(
+              source.rotate(-(pangle - startAngle), pcenter),
+              undefined,
+              {
+                async: false,
+              },
+            )
+          target &&
+            child.setTarget(
+              target.rotate(-(pangle - startAngle), pcenter),
+              undefined,
+              {
+                async: false,
+              },
+            )
         } else if (child.isNode()) {
           const csize = child.getSize()
           const cposition = child.getPosition()
@@ -154,9 +168,12 @@ export class Group
     const pangle = node.getAngle()
     node.prop('startAngle', pangle, { silent: true })
     node.prop('isRotating', false)
+
     const children = node.getDescendants()
+
     if (children?.length > 0) {
       children.forEach((child) => {
+        if (child.getChildren()) return
         if (child.isEdge()) {
           child.prop('edgeSourceStart', null)
           child.prop('edgeTargetStart', null)
@@ -167,6 +184,8 @@ export class Group
         }
       })
     }
+    node.prop('startAngle', pangle, { silent: true })
+    node.prop('isRotating', false)
   }
 
   protected onNodeResize({ e, node }: { e: EventArgs; node: Node }) {
@@ -187,12 +206,13 @@ export class Group
     if (children?.length > 0) {
       children.forEach((child) => {
         if (child.isEdge()) {
-          const source = child.getSourcePoint()
-          const target = child.getTargetPoint()
+          const source = child.getSourceCell() ? null : child.getSourcePoint()
           if (source) {
             const sourcePoint = new Point(source.x, source.y)
             child.prop('edgeSourceStart', sourcePoint)
           }
+
+          const target = child.getTargetCell() ? null : child.getTargetPoint()
           if (target) {
             const targetPoint = new Point(target.x, target.y)
             child.prop('edgeTargetStart', targetPoint)
@@ -208,6 +228,16 @@ export class Group
         if (child.prop('yFlipped') === undefined) {
           child.prop('yFlipped', false)
         }
+        // const mat = Dom.createSVGMatrix({
+        //   a: 2,
+        //   b: 0,
+        //   c: 0,
+        //   d: 2,
+        //   e: 10,
+        //   f: 10,
+        // })
+
+        // node.setMatrix(mat)
       })
     }
   }
@@ -234,6 +264,7 @@ export class Group
         bbox &&
         parent.position(bbox.x, bbox.y)
     }
+    // This is a rectangle in size of the un-rotated node.
     const pStartBBox = node.prop('startBBox')
     // note x and y cursor positions round to grid intervals
     // setSelectedNodes((s) => s.map((el, index) => el)); // very slowed cause jumpy ui but required (need momosing) not needed when using Signia
@@ -250,17 +281,14 @@ export class Group
       | 'top-right' = pOrigDragPort
 
     const pBBox = node.getBBox()
-
-    // state.setW(pBBox.width);
-    // state.setH(pBBox.height);
-
     let cursor = new Point(x, y)
     cursor = cursor.rotate(pAngle, pStartBBox.getCenter())
 
     let xFlipped = node.prop('xFlipped') || false
     let yFlipped = node.prop('yFlipped') || false
 
-    // create fixed point at top left of starting bounding box of paren
+    // Create fixed point at top left of starting bounding box of parent. Pick the corner point on the node, which meant to stay on its
+    // place before and after the resize.
     const pFixedPoint = pStartBBox.getCenter()
 
     switch (pOrigDragPort) {
@@ -323,10 +351,10 @@ export class Group
         pFixedPoint.add(pStartBBox.width / 2, pStartBBox.height / 2)
         xFlipped = cursor.x > pFixedPoint.x
         yFlipped = cursor.y > pFixedPoint.y
-        if (xFlipped && yFlipped) pCurrDragPort = 'bottom-right' // 1
-        if (xFlipped && !yFlipped) pCurrDragPort = 'top-right' // 2
-        if (!xFlipped && yFlipped) pCurrDragPort = 'bottom-left' // 0
-        if (!xFlipped && !yFlipped) pCurrDragPort = 'top-left' // 3
+        if (xFlipped && yFlipped) pCurrDragPort = 'bottom-right' // 3
+        if (xFlipped && !yFlipped) pCurrDragPort = 'top-right' // 3
+        if (!xFlipped && yFlipped) pCurrDragPort = 'bottom-left' // 2
+        if (!xFlipped && !yFlipped) pCurrDragPort = 'top-left' // 1
         break
 
       default:
@@ -348,18 +376,55 @@ export class Group
     const pHeight = pBBox.height
 
     // following code include to ensure that parent fixed point remains fixed when flipping shape (replicate core resizing code with grid snapping removed)
+
+    // Find an image of the previous indent point. This is the position,
+    // where is the point actually located on the screen.
     const pFixedQuadrant = map[pCurrDragPort]
     const pImageFixedPoint = pFixedPoint
       .clone()
       .rotate(-pAngle, pStartBBox.getCenter())
+
+    // Every point on the element rotates around a circle with the centre of
+    // rotation in the middle of the element while the whole element is being
+    // rotated. That means that the distance from a point in the corner of
+    // the element (supposed its always rect) to the center of the element
+    // doesn't change during the rotation and therefore it equals to a
+    // distance on un-rotated element.
+    // We can find the distance as DISTANCE = (ELEMENTWIDTH/2)^2 + (ELEMENTHEIGHT/2)^2)^0.5.
     const radius = Math.sqrt(pWidth * pWidth + pHeight * pHeight) / 2
+
+    // Now we are looking for an angle between x-axis and the line starting
+    // at image of fixed point and ending at the center of the element.
+    // We call this angle `alpha`.
+
+    // The image of a fixed point is located in n-th quadrant. For each
+    // quadrant passed going anti-clockwise we have to add 90 degrees.
+    // Note that the first quadrant has index 0.
+    //
+    // 2 | 3
+    // --c-- Quadrant positions around the element's center `c`
+    // 1 | 0
+    //
     let alpha = (pFixedQuadrant * Math.PI) / 2 // moving anticlockwise to start of quadrant;  pi radians =180 degrees
+
+    // Add an angle between the beginning of the current quadrant (line
+    // parallel with x-axis or y-axis going through the center of the
+    // element) and line crossing the indent of the fixed point and the
+    // center of the element. This is the angle we need but on the
+    // un-rotated element.
     alpha += Math.atan(
       pFixedQuadrant % 2 === 0 ? pHeight / pWidth : pWidth / pHeight,
     ) // add on angle in radians
+    // Lastly we have to deduct the original angle the element was rotated
+    // by and that's it.
     alpha -= Angle.toRad(pAngle)
+    // With this angle and distance we can easily calculate the centre of
+    // the un-rotated element.
+    // Note that fromPolar constructor accepts an angle in radians.
     const center = Point.fromPolar(radius, alpha, pImageFixedPoint)
-
+    // The top left corner on the un-rotated element has to be half a width
+    // on the left and half a height to the top from the center. This will
+    // be the origin of rectangle we were looking for.
     const origin = center.clone().translate(pWidth / -2, pHeight / -2)
     node.setPosition(origin.x, origin.y)
 
@@ -407,78 +472,34 @@ export class Group
 
     if (children?.length > 0) {
       children.forEach((child) => {
-        if (child.isEdge()) {
-          const sSourcenode = child.prop('edgeSourceStart')
-          const sTargetnode = child.prop('edgeTargetStart')
+        const cAngle = child.isNode() ? Angle.normalize(child.angle()) : 0
+        const cStartBBox = child.prop('startBBox')
+        const cFixedPoint = cStartBBox.getCenter()
+        const { width, height } = cStartBBox
 
-          const xSourceDistance =
-            (pStartBBox.x + pStartBBox.width - sSourcenode.x) * xFactor
-          const ySourceDistance =
-            (pStartBBox.y + pStartBBox.height - sSourcenode.y) * yFactor
+        const fixedQuadrantOffset = Math.floor((cAngle - pAngle + 45) / 90) // new
 
-          const xTargetDistance =
-            (pStartBBox.x + pStartBBox.width - sTargetnode.x) * xFactor
-          const yTargetDistance =
-            (pStartBBox.y + pStartBBox.height - sTargetnode.y) * yFactor
+        let newKeyIndex =
+          Object.keys(map).indexOf(pCurrDragPort) + fixedQuadrantOffset * 2
 
-          const xRef = xFlipped ? pBBox.x : pBBox.x + pBBox.width
-          const yRef = yFlipped ? pBBox.y : pBBox.y + pBBox.height
+        if (newKeyIndex > 7) newKeyIndex -= 8
 
-          const xSource = xFlipped
-            ? xRef + xSourceDistance
-            : xRef - xSourceDistance
-          const ySource = yFlipped
-            ? yRef + ySourceDistance
-            : yRef - ySourceDistance
+        let cFixedQuadrant = Object.values(map)[newKeyIndex]
+        const cCurrDragPort = (Object.keys(map) as Array<keyof typeof map>)[
+          newKeyIndex
+        ]
 
-          const xTarget = xFlipped
-            ? xRef + xTargetDistance
-            : xRef - xTargetDistance
-          const yTarget = yFlipped
-            ? yRef + yTargetDistance
-            : yRef - yTargetDistance
+        let origKeyIndex =
+          Object.keys(map).indexOf(pOrigDragPort) + fixedQuadrantOffset * 2
 
-          child.setSource({
-            x: xSource,
-            y: ySource,
-          })
+        if (origKeyIndex > 7) origKeyIndex -= 8
+        const cOrigDragPort = Object.keys(map)[origKeyIndex]
 
-          child.setTarget({
-            x: xTarget,
-            y: yTarget,
-          })
+        //* ************************************ */
+        let newWidth = 0
+        let newHeight = 0
 
-          child.prop('xFlipped', xFlipped)
-          child.prop('yFlipped', yFlipped)
-        } else if (child.isNode()) {
-          const cAngle = Angle.normalize(child.angle() || 0)
-
-          const cStartBBox = child.prop('startBBox')
-          const { width, height } = cStartBBox
-
-          const fixedQuadrantOffset = Math.floor((cAngle - pAngle + 45) / 90) // new
-
-          let newWidth
-          let newHeight
-
-          let newKeyIndex =
-            Object.keys(map).indexOf(pCurrDragPort) + fixedQuadrantOffset * 2
-
-          if (newKeyIndex > 7) newKeyIndex -= 8
-
-          let cFixedQuadrant = Object.values(map)[newKeyIndex]
-          const cCurrDragPort = (Object.keys(map) as Array<keyof typeof map>)[
-            newKeyIndex
-          ] // new
-          const cFixedPoint = cStartBBox.getCenter()
-
-          let origKeyIndex =
-            Object.keys(map).indexOf(pOrigDragPort) + fixedQuadrantOffset * 2
-
-          if (origKeyIndex > 7) origKeyIndex -= 8
-
-          const cOrigDragPort = Object.keys(map)[origKeyIndex] // new
-
+        if (child.isNode()) {
           if (fixedQuadrantOffset % 2 === 0) {
             newWidth = width * xFactor
             newHeight = height * yFactor
@@ -498,38 +519,34 @@ export class Group
               cFixedPoint.add(cStartBBox.width / 2, -cStartBBox.height / 2)
               break
             case 'left':
-              cFixedPoint.add(cStartBBox.width / 2, cStartBBox.height / 2) // bottom-right Q-1
+              cFixedPoint.add(cStartBBox.width / 2, cStartBBox.height / 2)
               break
             case 'right':
-              // bottom-left Q-0
               cFixedPoint.add(-cStartBBox.width / 2, cStartBBox.height / 2)
               break
             case 'top-right':
               cFixedPoint.add(-cStartBBox.width / 2, cStartBBox.height / 2)
               break
             case 'top':
-              cFixedPoint.add(-cStartBBox.width / 2, cStartBBox.height / 2) // bottom left Q-0
+              cFixedPoint.add(-cStartBBox.width / 2, cStartBBox.height / 2)
               break
             case 'top-left':
               cFixedPoint.add(cStartBBox.width / 2, cStartBBox.height / 2)
               break
             default:
           }
+        }
+        //* ************************** */
 
-          cFixedQuadrant = map[cCurrDragPort]
-          const cImageFixedPoint = cFixedPoint
-            .clone()
-            .rotate(-cAngle, cStartBBox.getCenter())
-
-          const radius =
-            Math.sqrt(newWidth * newWidth + newHeight * newHeight) / 2
-          let alpha = (cFixedQuadrant * Math.PI) / 2
-          alpha += Math.atan(
-            cFixedQuadrant % 2 === 0
-              ? newHeight / newWidth
-              : newWidth / newHeight,
-          )
-          alpha -= Angle.toRad(cAngle)
+        const getTranslatedPoint = function (cFPoint: Point) {
+          let cImageFixedPoint
+          if (child.isNode()) {
+            cImageFixedPoint = cFPoint
+              .clone()
+              .rotate(-cAngle, cStartBBox.getCenter())
+          } else {
+            cImageFixedPoint = cFPoint
+          }
 
           const cFixedPointParent = cImageFixedPoint
             .clone()
@@ -557,6 +574,8 @@ export class Group
               (pFixedPoint.y - cFixedPointParent.y) * yFactor
           }
 
+          cFixedQuadrant = map[cCurrDragPort]
+
           // convert individual X Y offsets in a total offset (hypot) and determine angle
           let offsetAngle = Math.atan(yOffset / xOffset) || 0
           xOffset < 0 && (offsetAngle += Math.PI)
@@ -568,16 +587,48 @@ export class Group
           const yOffsetTrans = Math.sin(offsetAngle) * tOffset
 
           // translate shape from cImageFixedPoint
-          const translatedcFixedPoint = cImageFixedPoint
-            .clone()
-            .add(xOffsetTrans, yOffsetTrans)
+          return cImageFixedPoint.clone().add(xOffsetTrans, yOffsetTrans)
+        }
 
-          this.graph.isNode(child) && child.size(newWidth, newHeight)
-          const cCenter = Point.fromPolar(radius, alpha, translatedcFixedPoint)
-          const cOrigin = cCenter
-            .clone()
-            .translate(newWidth / -2, newHeight / -2)
-          this.graph.isNode(child) && child.position(cOrigin.x, cOrigin.y)
+        const sSourcenode = child.prop('edgeSourceStart') || null
+        const sTargetnode = child.prop('edgeTargetStart') || null
+
+        const cFixedSourcePoint =
+          new Point(sSourcenode?.x, sSourcenode?.y) || null
+        const cFixedTargetPoint =
+          new Point(sTargetnode?.x, sTargetnode?.y) || null
+
+        sSourcenode &&
+          child.isEdge() &&
+          child.setSource(getTranslatedPoint(cFixedSourcePoint), undefined, {
+            async: false,
+          })
+        sTargetnode &&
+          child.isEdge() &&
+          child.setTarget(getTranslatedPoint(cFixedTargetPoint), undefined, {
+            async: false,
+          })
+
+        let cCenter = new Point(0, 0)
+        let cOrigin = new Point(0, 0)
+
+        //* ***************************************************************** */
+        if (child.isNode()) {
+          const radius =
+            Math.sqrt(newWidth * newWidth + newHeight * newHeight) / 2
+          let alpha = (cFixedQuadrant * Math.PI) / 2
+          alpha += Math.atan(
+            cFixedQuadrant % 2 === 0
+              ? newHeight / newWidth
+              : newWidth / newHeight,
+          )
+          alpha -= Angle.toRad(cAngle)
+
+          const translatedcFixedPoint = getTranslatedPoint(cFixedPoint)
+          child.size(newWidth, newHeight)
+          cCenter = Point.fromPolar(radius, alpha, translatedcFixedPoint)
+          cOrigin = cCenter.clone().translate(newWidth / -2, newHeight / -2)
+          child.position(cOrigin.x, cOrigin.y)
 
           if (xFlipped && child.prop('xFlipped') !== true) {
             const path = child.getAttrByPath('body/refD')
@@ -616,9 +667,10 @@ export class Group
             }
           }
 
-          child.prop('xFlipped', xFlipped)
-          child.prop('yFlipped', yFlipped)
+          child.prop('xFlipped', false)
+          child.prop('yFlipped', false)
         }
+        //* ***************************************************************** */
       })
     }
   }

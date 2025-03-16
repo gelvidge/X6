@@ -658,7 +658,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     })
     this.totalDx = 0
     this.totalDy = 0
-    this.graph.updateGroupBounds(cell)
+    // this.graph.updateGroupBounds(cell)
     this.notifyTranslate = true
     this.translatingCells = []
   }
