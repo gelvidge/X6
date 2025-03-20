@@ -289,6 +289,8 @@ export class Group
 
     // Create fixed point at top left of starting bounding box of parent. Pick the corner point on the node, which meant to stay on its
     // place before and after the resize.
+    // following code include to ensure that parent fixed point remains fixed when flipping shape (replicate core resizing code with grid snapping removed)
+
     const pFixedPoint = pStartBBox.getCenter()
 
     switch (pOrigDragPort) {
@@ -359,27 +361,15 @@ export class Group
 
       default:
     }
-    const map = {
-      right: 0,
-      'top-right': 0,
-      top: 0,
-      'top-left': 1,
-      left: 1,
-      'bottom-left': 2,
-      bottom: 3,
-      'bottom-right': 3,
-    }
 
     const xFactor = pBBox.width / pStartBBox.width || 1
     const yFactor = pBBox.height / pStartBBox.height || 1
     const pWidth = pBBox.width
     const pHeight = pBBox.height
 
-    // following code include to ensure that parent fixed point remains fixed when flipping shape (replicate core resizing code with grid snapping removed)
-
     // Find an image of the previous indent point. This is the position,
     // where is the point actually located on the screen.
-    const pFixedQuadrant = map[pCurrDragPort]
+
     const pImageFixedPoint = pFixedPoint
       .clone()
       .rotate(-pAngle, pStartBBox.getCenter())
@@ -401,10 +391,21 @@ export class Group
     // quadrant passed going anti-clockwise we have to add 90 degrees.
     // Note that the first quadrant has index 0.
     //
-    // 2 | 3
+    // 3 | 2
     // --c-- Quadrant positions around the element's center `c`
-    // 1 | 0
+    // 0 | 1
     //
+    const map = {
+      right: 0,
+      'top-right': 0,
+      top: 0,
+      'top-left': 1,
+      left: 1,
+      'bottom-left': 2,
+      bottom: 3,
+      'bottom-right': 3,
+    }
+    const pFixedQuadrant = map[pCurrDragPort]
     let alpha = (pFixedQuadrant * Math.PI) / 2 // moving anticlockwise to start of quadrant;  pi radians =180 degrees
 
     // Add an angle between the beginning of the current quadrant (line
@@ -480,9 +481,10 @@ export class Group
         const fixedQuadrantOffset = Math.floor((cAngle - pAngle + 45) / 90) // new
 
         let newKeyIndex =
-          Object.keys(map).indexOf(pCurrDragPort) + fixedQuadrantOffset * 2
+          Object.keys(map).indexOf(pCurrDragPort) + fixedQuadrantOffset
 
-        if (newKeyIndex > 7) newKeyIndex -= 8
+        if (newKeyIndex > 3) newKeyIndex -= 4
+        else if (newKeyIndex < 0) newKeyIndex += 4
 
         let cFixedQuadrant = Object.values(map)[newKeyIndex]
         const cCurrDragPort = (Object.keys(map) as Array<keyof typeof map>)[
@@ -490,9 +492,11 @@ export class Group
         ]
 
         let origKeyIndex =
-          Object.keys(map).indexOf(pOrigDragPort) + fixedQuadrantOffset * 2
+          Object.keys(map).indexOf(pOrigDragPort) + fixedQuadrantOffset
 
-        if (origKeyIndex > 7) origKeyIndex -= 8
+        if (origKeyIndex > 3) origKeyIndex -= 4
+        else if (origKeyIndex < 0) origKeyIndex += 4
+
         const cOrigDragPort = Object.keys(map)[origKeyIndex]
 
         //* ************************************ */
