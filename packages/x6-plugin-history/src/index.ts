@@ -129,7 +129,7 @@ export class History
       const cmd = this.redoStack.pop()
       if (cmd && !Array.isArray(cmd) && typeof cmd.redo !== 'undefined') {
         cmd.redo()
-        // this.undoStackPush(cmd) : does not need to be done for lexical since redo() will trigger changingHistory and update undo stack
+        cmd.addUndoStack && this.undoStackPush(cmd) // does not need to be done for lexical since redo() will trigger changingHistory and update undo stack
         this.notify('redo', cmd, options)
       } else if (cmd) {
         this.applyCommand(cmd, options)
@@ -751,6 +751,7 @@ export namespace History {
     options?: KeyValue
     undo?: (options?: KeyValue<any>) => History | null
     redo?: (options?: KeyValue<any>) => History | null
+    addUndoStack?: boolean
   }
 
   export type Commands = History.Command[] | History.Command

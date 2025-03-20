@@ -10,9 +10,12 @@ declare module '@antv/x6/lib/graph/graph' {
     undo: (options?: KeyValue) => Graph
     redo: (options?: KeyValue) => Graph
     undoAndCancel: (options?: KeyValue) => Graph
+    addUndo: (undoStack: History.Commands[]) => Graph
     canUndo: () => boolean
     canRedo: () => boolean
     cleanHistory: (options?: KeyValue) => Graph
+    getUndoStack: () => History.Commands[] | null
+    getRedoStack: () => History.Commands[] | null
   }
 }
 
@@ -92,6 +95,14 @@ Graph.prototype.canUndo = function () {
   return false
 }
 
+Graph.prototype.addUndo = function (undoStack: History.Commands[]) {
+  const history = this.getPlugin('history') as History
+  if (history) {
+    history.addUndo(undoStack)
+  }
+  return this
+}
+
 Graph.prototype.canRedo = function () {
   const history = this.getPlugin('history') as History
   if (history) {
@@ -106,4 +117,20 @@ Graph.prototype.cleanHistory = function (options?: KeyValue) {
     history.clean(options)
   }
   return this
+}
+
+Graph.prototype.getRedoStack = function () {
+  const history = this.getPlugin('history') as History
+  if (history) {
+    return history.getRedoStack()
+  }
+  return null
+}
+
+Graph.prototype.getUndoStack = function () {
+  const history = this.getPlugin('history') as History
+  if (history) {
+    return history.getUndoStack()
+  }
+  return null
 }

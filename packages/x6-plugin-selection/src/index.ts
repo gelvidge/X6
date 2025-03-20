@@ -320,6 +320,7 @@ export class Selection
   }
 
   groupCells(cells: Cell[]) {
+    this.graph.startBatch('grouping')
     const padding = 0
     const childArray: Cell[] = []
     cells.forEach((cell) => {
@@ -357,9 +358,12 @@ export class Selection
         ;(this.graph as any).resetSelection(parent)
       }
     }
+    this.graph.stopBatch('grouping')
   }
-
+  // ***1 things to crorrect:
+  // -when grouping a rotated group with added in cell, problems with parent afterwards
   unGroupCells(cells: Cell[]) {
+    this.graph.startBatch('ungrouping')
     const groupArray: Cell[] = []
     cells.forEach((cell) => {
       if (!cell.hasParent() && cell.getChildren()) {
@@ -374,9 +378,14 @@ export class Selection
     groupArray.forEach((group) => {
       const children = group.getChildren()
       children && this.graph.select(children)
+
+      children?.forEach((child) => {
+        child.setParent(null)
+      })
       group.setChildren(null)
       group.remove()
     })
+    this.graph.stopBatch('ungrouping')
   }
 
   getRootNode(cell: Cell): Cell | null {

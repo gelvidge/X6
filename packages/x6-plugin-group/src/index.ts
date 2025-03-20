@@ -667,8 +667,8 @@ export class Group
             }
           }
 
-          child.prop('xFlipped', false)
-          child.prop('yFlipped', false)
+          child.prop('xFlipped', xFlipped)
+          child.prop('yFlipped', yFlipped)
         }
         //* ***************************************************************** */
       })
@@ -679,6 +679,8 @@ export class Group
     node.prop('isResizing', false)
     node.removeProp(['startBBox'])
     node.removeProp(['dragPort'])
+    node.prop('xFlipped', false)
+    node.prop('yFlipped', false)
 
     const children = node.getDescendants()
     if (children?.length > 0) {
@@ -686,6 +688,8 @@ export class Group
         child.prop('isResizing', false)
         child.removeProp('startBBox')
         child.removeProp('dragPort')
+        child.prop('xFlipped', false)
+        child.prop('yFlipped', false)
       })
     }
   }
