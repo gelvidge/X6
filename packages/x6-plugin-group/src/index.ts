@@ -130,7 +130,7 @@ export class Group
     const children = params.node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child: Cell) => {
-        if (child.getChildren()) return
+        // if (child.getChildren()) return
         // const childView = this.graph.findViewByCell(child.id)
         if (child.isEdge()) {
           const source = child.prop('edgeSourceStart')?.clone() || null
@@ -181,7 +181,7 @@ export class Group
 
     if (children?.length > 0) {
       children.forEach((child) => {
-        if (child.getChildren()) return
+        //   if (child.getChildren()) return
         if (child.isEdge()) {
           child.removeProp('edgeSourceStart')
           child.removeProp('edgeTargetStart')
