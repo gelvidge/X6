@@ -92,8 +92,11 @@ export class Group
   }
 
   protected onNodeRotate({ node }: { node: Node }) {
-    node.prop('isRotating', true)
-    !node.prop('startAngle') && node.prop('startAngle', 0)
+    // node.prop('isRotating', true)
+    const pangle = node.getAngle()
+
+    node.prop('startAngle', pangle, { silent: true })
+    //! node.prop('startAngle') && node.prop('startAngle', 0)
     const children = node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child: Cell) => {
@@ -110,7 +113,11 @@ export class Group
             child.prop('edgeTargetStart', targetPoint)
           }
         } else if (child.isNode()) {
-          child.prop('isRotating', true)
+          const cangle = (child as Node).getAngle()
+          child.prop('startAngle', cangle - pangle, { silent: true })
+          //    child.prop('isRotating', true)
+          const cbbox = child.getBBox()
+          child.prop('startBBox', cbbox)
         }
       })
     }
@@ -149,25 +156,26 @@ export class Group
           const cposition = child.getPosition()
           const cangle = child.getAngle()
           const cStartAngle = child.prop('startAngle') || 0
-          const ccenter = child.getBBox().getCenter()
+          const ccenter = child.prop('startBBox').getCenter()
 
-          ccenter.rotate(cangle - pangle - cStartAngle, pcenter)
+          ccenter.rotate(-(pangle - startAngle), pcenter)
           const dx = ccenter.x - csize.width / 2 - cposition.x
           const dy = ccenter.y - csize.height / 2 - cposition.y
-
+          child.setPosition(cposition.x + dx, cposition.y + dy, {
+            silent: true,
+          })
           child.rotate(pangle - cangle + cStartAngle, {
             center: null,
           })
-          child.setPosition(cposition.x + dx, cposition.y + dy)
         }
       })
     }
   }
 
   protected onNodeRotated({ node }: { node: Node }) {
-    const pangle = node.getAngle()
-    node.prop('startAngle', pangle, { silent: true })
-    node.prop('isRotating', false)
+    // const pangle = node.getAngle()
+    // node.prop('startAngle', pangle, { silent: true })
+    // node.prop('isRotating', false)
 
     const children = node.getDescendants()
 
@@ -175,17 +183,20 @@ export class Group
       children.forEach((child) => {
         if (child.getChildren()) return
         if (child.isEdge()) {
-          child.prop('edgeSourceStart', null)
-          child.prop('edgeTargetStart', null)
+          child.removeProp('edgeSourceStart')
+          child.removeProp('edgeTargetStart')
         } else if (child.isNode()) {
-          child.prop('isRotating', false)
-          const cangle = (child as Node).getAngle()
-          child.prop('startAngle', cangle - pangle, { silent: true })
+          // child.prop('isRotating', false)
+          // const cangle = (child as Node).getAngle()
+          // child.prop('startAngle', cangle - pangle, { silent: true })
+          child.removeProp('startAngle')
+          child.removeProp('startBBox')
         }
       })
     }
-    node.prop('startAngle', pangle, { silent: true })
-    node.prop('isRotating', false)
+    // node.prop('startAngle', pangle, { silent: true })
+    // node.prop('isRotating', false)
+    node.removeProp('startBBox')
   }
 
   protected onNodeResize({ e, node }: { e: EventArgs; node: Node }) {
