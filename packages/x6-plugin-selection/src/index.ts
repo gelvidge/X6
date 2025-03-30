@@ -675,19 +675,15 @@ export class Selection
   }
 
   updateGroupBounds(cell: Cell) {
-    const ancestors = cell.getAncestors({ deep: true })
-    if (ancestors.length) {
-      ancestors.forEach((ancestor: Cell) => {
-        const bbox = this.graph.model.getCellsBBox(ancestor.getDescendants())
-        this.graph.isNode(ancestor) &&
-          bbox &&
-          ancestor.size(bbox.width, bbox.height)
-        this.graph.isNode(ancestor) && bbox && ancestor.position(bbox.x, bbox.y)
-      })
+    const root = this.getRootNode(cell)
+    if (root) {
+      const bbox = this.graph.model.getCellsBBox(root.getDescendants())
+      this.graph.isNode(root) && bbox && root.size(bbox.width, bbox.height)
+      this.graph.isNode(root) && bbox && root.position(bbox.x, bbox.y)
+      root.isNode() && root.rotate(-root.getAngle())
     } else {
       const descendants = cell.getDescendants()
       const bbox = this.graph.model.getCellsBBox(descendants)
-      //  cell.isNode() && bbox?.rotate(-cell.getAngle())
 
       this.graph.isNode(cell) && bbox && cell.size(bbox.width, bbox.height)
       this.graph.isNode(cell) && bbox && cell.position(bbox.x, bbox.y)
@@ -776,22 +772,22 @@ export class Selection
     this.firstCell = false
   }
 
-  protected onNodeMoved() {
+  protected onNodeMoved({ node }: EventArgs['node:moved']) {
     this.movingSelectedCells.length && this.graph.cleanSelection()
     this.movingSelectedCells.forEach((cell) => {
       this.select(cell)
     })
-    // this.updateGroupBounds(node)
+    this.updateGroupBounds(node)
     this.movingSelectedCells = []
     this.firstCell = true
   }
 
-  protected onEdgeMoved() {
+  protected onEdgeMoved({ edge }: EventArgs['edge:moved']) {
     this.movingSelectedCells.length && this.graph.cleanSelection()
     this.movingSelectedCells.forEach((cell) => {
       this.select(cell)
     })
-    // this.updateGroupBounds(edge)
+    this.updateGroupBounds(edge)
     this.movingSelectedCells = []
     this.firstCell = true
   }

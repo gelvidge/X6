@@ -704,7 +704,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     this.totalDx += dx
     this.totalDy += dy
 
-    /// GE 14/2/25 can optimise this code to ensure that functions are not repeated on every single movement
     this.translatingCells.forEach((cell) => {
       if (
         cell.getDescendants().length > 0 &&

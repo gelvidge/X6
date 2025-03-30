@@ -204,7 +204,7 @@ export class Group
     const bbox = node.getBBox()
 
     node.prop('startBBox', bbox)
-    node.prop('isResizing', true)
+    //  node.prop('isResizing', true)
     node.prop('dragPort', dragPort)
     if (node.prop('xFlipped') === undefined) {
       node.prop('xFlipped', false)
@@ -230,7 +230,7 @@ export class Group
           }
         }
 
-        child.prop('isResizing', true)
+        //  child.prop('isResizing', true)
         const cbbox = child.getBBox()
         child.prop('startBBox', cbbox)
         if (child.prop('xFlipped') === undefined) {
@@ -691,20 +691,20 @@ export class Group
   }
 
   protected onNodeResized({ node }: { node: Node }) {
-    node.prop('isResizing', false)
+    // node.prop('isResizing', false)
     node.removeProp(['startBBox'])
     node.removeProp(['dragPort'])
-    node.prop('xFlipped', false)
-    node.prop('yFlipped', false)
+    node.removeProp('xFlipped')
+    node.removeProp('yFlipped')
 
     const children = node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child) => {
-        child.prop('isResizing', false)
+        // child.prop('isResizing', false)
         child.removeProp('startBBox')
         child.removeProp('dragPort')
-        child.prop('xFlipped', false)
-        child.prop('yFlipped', false)
+        child.removeProp('xFlipped')
+        child.removeProp('yFlipped')
       })
     }
   }
