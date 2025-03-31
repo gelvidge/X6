@@ -675,18 +675,15 @@ export class Selection
   }
 
   updateGroupBounds(cell: Cell) {
-    const root = this.getRootNode(cell)
-    if (root) {
-      const bbox = this.graph.model.getCellsBBox(root.getDescendants())
-      this.graph.isNode(root) && bbox && root.size(bbox.width, bbox.height)
-      this.graph.isNode(root) && bbox && root.position(bbox.x, bbox.y)
-      root.isNode() && root.rotate(-root.getAngle())
-    } else {
-      const descendants = cell.getDescendants()
-      const bbox = this.graph.model.getCellsBBox(descendants)
+    let parent = cell.getParent()
 
-      this.graph.isNode(cell) && bbox && cell.size(bbox.width, bbox.height)
-      this.graph.isNode(cell) && bbox && cell.position(bbox.x, bbox.y)
+    while (parent) {
+      const children = parent.getDescendants()
+      const bbox = this.graph.model.getCellsBBox(children)
+      this.graph.isNode(parent) && bbox && parent.size(bbox.width, bbox.height)
+      this.graph.isNode(parent) && bbox && parent.position(bbox.x, bbox.y)
+      parent.isNode() && parent.rotate(-parent.getAngle())
+      parent = parent.getParent()
     }
   }
 
