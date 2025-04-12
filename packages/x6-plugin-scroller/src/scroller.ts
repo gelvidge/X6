@@ -427,6 +427,7 @@ export class ScrollerImpl extends View<ScrollerImpl.EventArgs> {
     }
 
     Dom.prop(this.container, prop)
+    this.graph.trigger('scroll', { left, top })
 
     return this
   }
@@ -451,7 +452,9 @@ export class ScrollerImpl extends View<ScrollerImpl.EventArgs> {
     }
 
     Dom.prop(this.container, prop)
-
+    const top = prop.scrollTop
+    const left = prop.scrollLeft
+    this.graph.trigger('scroll', { left, top })
     return this
   }
 
@@ -1126,6 +1129,7 @@ export namespace ScrollerImpl {
   export interface EventArgs {
     'pan:start': { e: Dom.MouseDownEvent }
     panning: { e: Dom.MouseMoveEvent }
+    scroll: { left: number; top: number }
     'pan:stop': { e: Dom.MouseUpEvent }
   }
   export interface Options {

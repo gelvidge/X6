@@ -626,16 +626,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
       ) {
         Dom.translate(cellView.container, -this.totalDx, -this.totalDy) // to offset the css translation caused by updating the model (only applies to edges)
         item.translate(this.totalDx, this.totalDy)
-        // const target = item.prop('target') || { x: 0, y: 0 }
-        // const source = item.prop('source') || { x: 0, y: 0 }
-        // item.prop('target', {
-        //   x: target.x + this.totalDx,
-        //   y: target.y + this.totalDy,
-        // })
-        // item.prop('source', {
-        //   x: source.x + this.totalDx,
-        //   y: source.y + this.totalDy,
-        // })
       }
       const connectedEdges = this.graph.getConnectedEdges(item).length
 
@@ -645,7 +635,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         connectedEdges === 0 &&
         !item.getChildren() && // position of connected nodes is updated during translating cells
         item.id !== cell.id && // dragged cell is updated automatically by drag
-        !item.hasParent()
+        !item.isDescendantOf(cell) // if parent is being dragged then the children are uaomtatically tralnslated by node.translate
         // these are updated in translating cells
       ) {
         // item.translate(this.totalDx, this.totalDy, {})
@@ -658,7 +648,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
     })
     this.totalDx = 0
     this.totalDy = 0
-    // this.graph.updateGroupBounds(cell)
     this.notifyTranslate = true
     this.translatingCells = []
   }
@@ -712,11 +701,6 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
         return // descendants are translated as children through node.translate
 
       if (!excludedMap[cell.id]) {
-        // const options = {
-        //  ...otherOptions,
-        //  selection: this.cid,
-        //   exclude: excluded,
-        // }
         const cellView = this.graph.findViewByCell(cell.id)
         const item = cellView?.cell
         const connectedEdges = this.graph.getConnectedEdges(cell).length
