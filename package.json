@@ -87,9 +87,13 @@
       "resolve-url": "0.2.x",
       "source-map-url": "0.4.x",
       "source-map-resolve": "0.5.x"
+    },
+    "overrides": {
+      "@antv/x6": "link:packages/x6"
     }
   },
   "dependencies": {
+    "@antv/x6": "link:packages/x6",
     "@babel/core": "^7.26.0",
     "@babel/plugin-syntax-flow": "^7.26.0",
     "@babel/plugin-transform-react-jsx": "^7.25.9",

@@ -1,7 +1,7 @@
 {
-  "name": "@antv/x6-plugin-selection",
-  "version": "2.2.2",
-  "description": "selection plugin for X6",
+  "name": "@antv/x6-plugin-ruler",
+  "version": "2.0.0",
+  "description": "ruler plugin for X6",
   "main": "lib/index.js",
   "module": "es/index.js",
   "unpkg": "dist/index.js",
@@ -15,7 +15,7 @@
   ],
   "keywords": [
     "plugin",
-    "selection",
+    "ruler",
     "x6",
     "antv"
   ],
@@ -28,7 +28,6 @@
     "build:cjs": "rss",
     "build:umd": "rss",
     "build:dev": "rss",
-    "build:less": "rss",
     "build:watch": "rss",
     "build:watch:esm": "rss",
     "build:watch:cjs": "rss",
@@ -39,24 +38,24 @@
     "pretest": "rss"
   },
   "dependencies": {
-    "@antv/x6-plugin-transform": "file:..\\x6-plugin-transform"
+    "@scena/ruler": "^0.20.0"
   },
   "devDependencies": {
     "@antv/x6": "file:..\\x6"
   },
   "author": {
-    "name": "bubkoo",
-    "email": "bubkoo.wy@gmail.com"
+    "name": "gelvidge",
+    "email": "garethelvidge@gmail.com"
   },
   "license": "MIT",
-  "homepage": "https://x6.antv.antgroup.com/tutorial/plugins/selection",
+  "homepage": "https://x6.antv.antgroup.com/tutorial/plugins/",
   "bugs": {
     "url": "https://github.com/antvis/x6/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/antvis/x6.git",
-    "directory": "packages/x6-plugin-selection"
+    "directory": "packages/x6-plugin-ruler"
   },
   "publishConfig": {
     "access": "public",

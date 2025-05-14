@@ -41,9 +41,6 @@
   "dependencies": {
     "@antv/x6-plugin-dnd": "file:..\\x6-plugin-dnd"
   },
-  "peerDependencies": {
-    "@antv/x6": "file:..\\x6"
-  },
   "devDependencies": {
     "@antv/x6": "file:..\\x6",
     "@antv/x6-plugin-dnd": "file:..\\x6-plugin-dnd"

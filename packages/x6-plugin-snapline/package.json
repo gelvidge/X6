@@ -42,9 +42,6 @@
     "name": "bubkoo",
     "email": "bubkoo.wy@gmail.com"
   },
-  "peerDependencies": {
-    "@antv/x6": "file:..\\x6"
-  },
   "devDependencies": {
     "@antv/x6": "file:..\\x6"
   },

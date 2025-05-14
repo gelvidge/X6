@@ -11,7 +11,6 @@ export class Group
   implements Graph.Plugin
 {
   public name = 'group'
-
   private graph: Graph
 
   // private groupImpl: GroupImpl

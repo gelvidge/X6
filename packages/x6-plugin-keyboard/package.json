@@ -41,9 +41,6 @@
     "@types/mousetrap": "^1.6.15",
     "mousetrap": "^1.6.5"
   },
-  "peerDependencies": {
-    "@antv/x6": "file:..\\x6"
-  },
   "devDependencies": {
     "@antv/x6": "file:..\\x6"
   },

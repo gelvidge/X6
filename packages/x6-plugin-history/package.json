@@ -37,9 +37,6 @@
     "coveralls": "rss",
     "pretest": "rss"
   },
-  "peerDependencies": {
-    "@antv/x6": "file:..\\x6"
-  },
   "devDependencies": {
     "@antv/x6": "file:..\\x6"
   },

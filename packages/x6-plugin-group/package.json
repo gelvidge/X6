@@ -40,13 +40,10 @@
   "dependencies": {
     "svg-path-commander": "^2.0.0"
   },
-  "peerDependencies": {
+  "devDependencies": {
     "@antv/x6": "file:..\\x6",
     "@antv/x6-geometry": "file:..\\x6-geometry",
     "@antv/x6-common": "file:..\\x6-common"
-  },
-  "devDependencies": {
-    "@antv/x6": "file:..\\x6"
   },
   "author": {
     "name": "bubkoo",
