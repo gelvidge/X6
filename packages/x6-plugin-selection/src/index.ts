@@ -3,16 +3,26 @@ import {
   ModifierKey,
   CssLoader,
   Dom,
-  // ObjectExt,
   Cell,
+  Point,
+  Edge,
   EventArgs,
   Graph,
-  Point,
 } from '@antv/x6'
 import { Transform } from '@antv/x6-plugin-transform'
 import { SelectionImpl } from './selection'
 import { content } from './style/raw'
 import './api'
+
+interface ChangeArgs<T> {
+  cell: Cell
+  current?: T
+  previous?: T
+}
+
+interface EdgeChangeArgs<T> extends ChangeArgs<T> {
+  edge: Edge
+}
 
 export class Selection
   extends Basecoat<SelectionImpl.EventArgs>
@@ -446,6 +456,7 @@ export class Selection
     this.graph.on('node:move', this.onNodeMove, this)
     this.graph.on('node:moved', this.onNodeMoved, this)
     this.graph.on('edge:move', this.onEdgeMove, this)
+    this.graph.on('edge:mouseup', this.onEdgeTerminalChanged, this)
     this.graph.on('edge:moved', this.onEdgeMoved, this)
     this.graph.on('cell:click', this.onCellClick, this)
     this.graph.on('cell:selected', this.onCellSelected, this)
@@ -460,6 +471,7 @@ export class Selection
     this.graph.off('node:move', this.onNodeMove, this)
     this.graph.off('node:moved', this.onNodeMoved, this)
     this.graph.off('edge:move', this.onEdgeMove, this)
+    this.graph.on('edge:mouseup', this.onEdgeTerminalChanged, this)
     this.graph.off('edge:moved', this.onEdgeMoved, this)
     this.graph.off('cell:click', this.onCellClick, this)
     this.graph.off('cell:selected', this.onCellSelected, this)
@@ -624,12 +636,6 @@ export class Selection
       cell.setAttrs({
         body: { visibility: 'visible' },
       })
-
-      // const children = cell.getDescendants()
-      // children.forEach((child) => {
-      //   child.isNode() && this.graph.clearTransformWidget(child)
-      // })
-      // this.graph.unselect(children)
     }
   }
 
@@ -675,139 +681,115 @@ export class Selection
     )
   }
 
-  updateGroupBound3(cell: Cell) {
-    const root = this.graph.getRootNode(cell)
-    let parent = cell.getParent()
-    if (!parent) return
-    const rootChildren = root ? root.getDescendants() : []
-    const rootBBox = this.graph.model.getCellsBBox(rootChildren)
-    const rootCenter = rootBBox ? rootBBox.getCenter() : null
-    const newArray = [] as Cell[]
-    while (parent && rootBBox && root?.isNode()) {
-      const parentChildren = parent.getDescendants({ deep: false }) || []
-
-      parentChildren.forEach((child) => {
-        if (child.isNode()) {
-          const clone = child.clone()
-          clone.rotate(0, { absolute: true })
-          clone.rotate(-root.getAngle(), {
-            center: rootCenter,
-          })
-          newArray.push(clone)
-        }
-      })
-      const bbox = this.graph.model.getCellsBBox(newArray)
-      if (this.graph.isNode(parent) && bbox && parent === root) {
-        parent.size(bbox.width, bbox.height)
-        parent.position(bbox.x, bbox.y)
-      } else if (this.graph.isNode(parent) && bbox && !parent.getChildren()) {
-        parent.size(bbox.width, bbox.height)
-        const position = Point.create({ x: bbox.x, y: bbox.y })
-        rootCenter && position.rotate(parent.getAngle(), rootCenter)
-        parent.position(position.x, position.y)
-      }
-      parent = parent.getParent()
-    }
-  }
-
-  updateGroupBounds2(cell: Cell) {
-    const root = this.graph.getRootNode(cell)
-    let parent = cell.getParent()
-    if (!parent) return
-    const rootChildren = root ? root.getDescendants() : []
-    // const parentChildren = parent ? parent.getDescendants() : []
-    const rootBBox = this.graph.model.getCellsBBox(rootChildren)
-    // const rootCenter = rootBBox ? rootBBox.getCenter() : null
-    const newXArray = [] as number[]
-    const newYArray = [] as number[]
-    while (parent && rootBBox && root?.isNode()) {
-      // const parentAngle=parent.getAngle()
-
-      rootChildren.forEach((child) => {
-        if (child.isNode()) {
-          const size = child.getSize()
-          const center = child.getBBox().getCenter()
-          const hypotenuse = Math.sqrt(
-            (size.width / 2) ** 2 + (size.height / 2) ** 2,
-          )
-          const angle =
-            (child.getAngle() * Math.PI) / 180 +
-            Math.atan(((size.height / 2 / (size.width / 2)) * Math.PI) / 180)
-          const rotatedXPosition = center.x - Math.cos(angle) * hypotenuse
-          const rotatedYPosition = center.y - Math.sin(angle) * hypotenuse
-          newXArray.push(rotatedXPosition)
-          newYArray.push(rotatedYPosition)
-        }
-      })
-      const minX = Math.min(...newXArray)
-      const maxX = Math.max(...newXArray)
-      const minY = Math.min(...newYArray)
-      const maxY = Math.max(...newYArray)
-      if (this.graph.isNode(parent)) {
-        parent.size(maxX - minX, maxY - minY)
-        parent.position(minX, minY)
-      }
-      // parent.isNode() && parent.rotate(-parent.getAngle())
-      parent = parent.getParent()
-    }
-  }
-
   updateGroupBounds(cell: Cell) {
     const root = this.graph.getRootNode(cell)
     if (!root) return
-    // let parent = cell.getParent()
+
     const rootChildren = root ? root.getDescendants() : []
-    const rootBBox = this.graph.model.getCellsBBox(rootChildren)
-    const rootCenter = rootBBox ? rootBBox.getCenter() : null
+    const rootCenter = root ? root.getBBox()?.getCenter() : null
 
     const newRootArray = [] as Cell[]
 
     rootChildren.forEach((child) => {
-      if (
-        root.isNode() &&
-        child.isNode() &&
-        !child.getChildren() &&
-        rootCenter
-      ) {
+      if (root.isNode() && child.isNode() && rootCenter) {
         const clone = child.clone()
         const size = clone.getSize()
         const position = clone.getPosition()
         const center = clone.getBBox().getCenter()
-        center.rotate(-root.getAngle(), rootCenter)
+        center.rotate(root.getAngle(), rootCenter)
         const dx = center.x - size.width / 2 - position.x
         const dy = center.y - size.height / 2 - position.y
         clone.setPosition(position.x + dx, position.y + dy)
         clone.rotate(0, { absolute: true })
 
         newRootArray.push(clone)
+      } else if (root.isNode() && child.isEdge() && rootCenter) {
+        const clone = child.clone()
+        const source = child.getSourceCell() ? null : clone.getSourcePoint()
+        const target = child.getTargetCell() ? null : clone.getTargetPoint()
+        const sourcePoint = source ? new Point(source.x, source.y) : null
+        const targetPoint = target ? new Point(target.x, target.y) : null
+        let update = false
+        if (sourcePoint != null) {
+          sourcePoint && sourcePoint.rotate(root.getAngle(), rootCenter)
+          clone.setSource(sourcePoint, undefined)
+          update = true
+        }
+        if (targetPoint != null) {
+          targetPoint && targetPoint.rotate(root.getAngle(), rootCenter)
+          clone.setTarget(targetPoint, undefined)
+          update = true
+
+          update && newRootArray.push(clone)
+        }
       }
     })
 
     const rootbbox = this.graph.model.getCellsBBox(newRootArray)
-    if (rootbbox && root.isNode()) {
-      root.size(rootbbox.width, rootbbox.height)
-      root.position(rootbbox.x, rootbbox.y)
+
+    if (rootbbox && root.isNode() && rootCenter) {
+      const newCentre = rootbbox.getCenter()
+      newCentre.rotate(-root.getAngle(), rootCenter)
+      root.setPosition(
+        newCentre.x - rootbbox.width / 2,
+        newCentre.y - rootbbox.height / 2,
+      )
+      root.setSize(rootbbox.width, rootbbox.height)
     }
 
     rootChildren.forEach((parent) => {
       const children = parent.getChildren()
+
       if (children && parent.isNode()) {
         const newArray = [] as Cell[]
-        const parentbbox = this.graph.model.getCellsBBox(children)
-        children.forEach((child) => {
-          if (child.isNode() && parentbbox) {
+        const filteredChildren = children.filter(
+          (child) => !child.getChildren(),
+        )
+        const parentbbox = this.graph.model.getCellsBBox(filteredChildren)
+        const parentCenter = parentbbox ? parentbbox.getCenter() : null
+        filteredChildren.forEach((child) => {
+          if (child.isNode() && parentbbox && parentCenter) {
             const clone = child.clone()
+            const size = clone.getSize()
+            const position = clone.getPosition()
+            const center = clone.getBBox().getCenter()
+            center.rotate(parent.getAngle(), parentCenter)
+            const dx = center.x - size.width / 2 - position.x
+            const dy = center.y - size.height / 2 - position.y
+            clone.setPosition(position.x + dx, position.y + dy)
             clone.rotate(0, { absolute: true })
-            clone.rotate(-parent.getAngle(), {
-              center: parentbbox.getCenter(),
-            })
             newArray.push(clone)
+          } else if (root.isNode() && child.isEdge() && rootCenter) {
+            const clone = child.clone()
+            const source = child.getSourceCell() ? null : clone.getSourcePoint()
+            const target = child.getTargetCell() ? null : clone.getTargetPoint()
+            const sourcePoint = source ? new Point(source.x, source.y) : null
+            const targetPoint = target ? new Point(target.x, target.y) : null
+            let update = false
+            if (sourcePoint != null) {
+              sourcePoint && sourcePoint.rotate(root.getAngle(), rootCenter)
+              clone.setSource(sourcePoint, undefined)
+              update = true
+            }
+            if (targetPoint != null) {
+              targetPoint && targetPoint.rotate(root.getAngle(), rootCenter)
+              clone.setTarget(targetPoint, undefined)
+              update = true
+
+              update && newRootArray.push(clone)
+            }
           }
         })
+
         const newParentbbox = this.graph.model.getCellsBBox(newArray)
-        if (newParentbbox && parent.isNode()) {
-          parent.size(newParentbbox.width, newParentbbox.height)
-          parent.position(newParentbbox.x, newParentbbox.y)
+        if (newParentbbox && root.isNode() && parentCenter) {
+          const newCentreParent = newParentbbox.getCenter()
+          newCentreParent.rotate(-parent.getAngle(), parentCenter)
+          parent.setPosition(
+            newCentreParent.x - newParentbbox.width / 2,
+            newCentreParent.y - newParentbbox.height / 2,
+          )
+          parent.setSize(newParentbbox.width, newParentbbox.height)
         }
       }
     })
@@ -853,6 +835,10 @@ export class Selection
       }
     }
     this.firstCell = false
+  }
+
+  protected onEdgeTerminalChanged({ edge }: EdgeChangeArgs<Edge.TerminalData>) {
+    this.updateGroupBounds(edge)
   }
 
   protected onEdgeMove({ edge }: EventArgs['edge:move']) {
