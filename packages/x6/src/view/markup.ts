@@ -324,7 +324,7 @@ export namespace Markup {
         groupSelector: 'lines',
         attrs: {
           fill: 'none',
-          cursor: 'pointer',
+          cursor: 'move',
           stroke: 'transparent',
           strokeLinecap: 'round',
         },

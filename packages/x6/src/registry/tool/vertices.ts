@@ -421,7 +421,7 @@ export namespace Vertices {
           fill: 'none',
           stroke: 'transparent',
           'stroke-width': 10,
-          cursor: 'pointer',
+          cursor: 'move',
         },
       },
     ],
