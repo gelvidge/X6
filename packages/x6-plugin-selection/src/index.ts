@@ -38,6 +38,7 @@ export class Selection
   private readonly options: Selection.Options
   private movedMap = new WeakMap<Cell, boolean>()
   private unselectMap = new WeakMap<Cell, boolean>()
+  private padding: number
 
   get rubberbandDisabled() {
     return this.options.enabled !== true || this.options.rubberband !== true
@@ -68,6 +69,7 @@ export class Selection
 
   public init(graph: Graph) {
     this.graph = graph
+    this.padding = 10
     this.graph.getPlugin('transform') as Transform
     this.blockClick = []
     this.movingSelectedCells = []
@@ -332,7 +334,7 @@ export class Selection
 
   groupCells(cells: Cell[]) {
     this.graph.startBatch('grouping')
-    const padding = 0
+
     const childArray: Cell[] = []
     cells.forEach((cell) => {
       if (!cell.hasParent()) {
@@ -344,10 +346,10 @@ export class Selection
     if (childArray.length > 1 && bbox) {
       const parent = this.graph.createNode({
         size: {
-          width: bbox.width + padding * 2,
-          height: bbox.height + padding * 2,
+          width: bbox.width + this.padding * 2,
+          height: bbox.height + this.padding * 2,
         },
-        position: { x: bbox.x - padding, y: bbox.y - padding },
+        position: { x: bbox.x - this.padding, y: bbox.y - this.padding },
         attrs: {
           body: {
             visibility: 'visible',
@@ -455,8 +457,11 @@ export class Selection
     this.selectionImpl.on('box:mousedown', this.onBoxMouseDown, this)
     this.graph.on('node:move', this.onNodeMove, this)
     this.graph.on('node:moved', this.onNodeMoved, this)
+    this.graph.on('node:resized', this.onNodeResized, this)
+    this.graph.on('node:resize', this.onNodeResize, this)
     this.graph.on('edge:move', this.onEdgeMove, this)
     this.graph.on('edge:mouseup', this.onEdgeTerminalChanged, this)
+    this.graph.on('edge:change:vertices', this.onEdgeVerticesChanged, this)
     this.graph.on('edge:moved', this.onEdgeMoved, this)
     this.graph.on('cell:click', this.onCellClick, this)
     this.graph.on('cell:selected', this.onCellSelected, this)
@@ -470,8 +475,11 @@ export class Selection
     this.selectionImpl.off('box:mousedown', this.onBoxMouseDown, this)
     this.graph.off('node:move', this.onNodeMove, this)
     this.graph.off('node:moved', this.onNodeMoved, this)
+    this.graph.off('node:resized', this.onNodeResized, this)
+    this.graph.off('node:resize', this.onNodeResize, this)
     this.graph.off('edge:move', this.onEdgeMove, this)
     this.graph.on('edge:mouseup', this.onEdgeTerminalChanged, this)
+    this.graph.on('edge:change:vertices', this.onEdgeVerticesChanged, this)
     this.graph.off('edge:moved', this.onEdgeMoved, this)
     this.graph.off('cell:click', this.onCellClick, this)
     this.graph.off('cell:selected', this.onCellSelected, this)
@@ -707,9 +715,21 @@ export class Selection
         const clone = child.clone()
         const source = child.getSourceCell() ? null : clone.getSourcePoint()
         const target = child.getTargetCell() ? null : clone.getTargetPoint()
+        const vertices = child.getVertices() || null
         const sourcePoint = source ? new Point(source.x, source.y) : null
         const targetPoint = target ? new Point(target.x, target.y) : null
+
         let update = false
+        if (vertices.length > 0) {
+          const newVertices = vertices.map(
+            (vertex) => new Point(vertex.x, vertex.y),
+          )
+          newVertices.forEach((vertex) => {
+            vertex.rotate(root.getAngle(), rootCenter)
+          })
+          clone.setVertices(newVertices)
+          update = true
+        }
         if (sourcePoint != null) {
           sourcePoint && sourcePoint.rotate(root.getAngle(), rootCenter)
           clone.setSource(sourcePoint, undefined)
@@ -719,9 +739,9 @@ export class Selection
           targetPoint && targetPoint.rotate(root.getAngle(), rootCenter)
           clone.setTarget(targetPoint, undefined)
           update = true
-
-          update && newRootArray.push(clone)
         }
+        clone.model = this.graph.model
+        update && newRootArray.push(clone)
       }
     })
 
@@ -731,10 +751,13 @@ export class Selection
       const newCentre = rootbbox.getCenter()
       newCentre.rotate(-root.getAngle(), rootCenter)
       root.setPosition(
-        newCentre.x - rootbbox.width / 2,
-        newCentre.y - rootbbox.height / 2,
+        newCentre.x - rootbbox.width / 2 - this.padding,
+        newCentre.y - rootbbox.height / 2 - this.padding,
       )
-      root.setSize(rootbbox.width, rootbbox.height)
+      root.setSize(
+        rootbbox.width + this.padding * 2,
+        rootbbox.height + this.padding * 2,
+      )
     }
 
     rootChildren.forEach((parent) => {
@@ -763,21 +786,34 @@ export class Selection
             const clone = child.clone()
             const source = child.getSourceCell() ? null : clone.getSourcePoint()
             const target = child.getTargetCell() ? null : clone.getTargetPoint()
+            const vertices = child.getVertices() || null
             const sourcePoint = source ? new Point(source.x, source.y) : null
             const targetPoint = target ? new Point(target.x, target.y) : null
             let update = false
+            if (vertices.length > 0) {
+              const newVertices = vertices.map(
+                (vertex) => new Point(vertex.x, vertex.y),
+              )
+              newVertices.forEach((vertex) => {
+                vertex.rotate(root.getAngle(), rootCenter)
+              })
+              clone.setVertices(newVertices)
+              update = true
+            }
             if (sourcePoint != null) {
               sourcePoint && sourcePoint.rotate(root.getAngle(), rootCenter)
               clone.setSource(sourcePoint, undefined)
+
               update = true
             }
             if (targetPoint != null) {
               targetPoint && targetPoint.rotate(root.getAngle(), rootCenter)
               clone.setTarget(targetPoint, undefined)
-              update = true
 
-              update && newRootArray.push(clone)
+              update = true
             }
+            clone.model = this.graph.model
+            update && newRootArray.push(clone)
           }
         })
 
@@ -786,13 +822,33 @@ export class Selection
           const newCentreParent = newParentbbox.getCenter()
           newCentreParent.rotate(-parent.getAngle(), parentCenter)
           parent.setPosition(
-            newCentreParent.x - newParentbbox.width / 2,
-            newCentreParent.y - newParentbbox.height / 2,
+            newCentreParent.x - newParentbbox.width / 2 - this.padding,
+            newCentreParent.y - newParentbbox.height / 2 - this.padding,
           )
-          parent.setSize(newParentbbox.width, newParentbbox.height)
+          parent.setSize(
+            newParentbbox.width + this.padding * 2,
+            newParentbbox.height + this.padding * 2,
+          )
         }
       }
     })
+  }
+
+  protected onNodeResize({ node }: EventArgs['node:change:size']) {
+    if (node.hasParent()) {
+      const parent = this.getRootNode(node)
+      parent?.isNode() && this.graph.clearTransformWidget(parent)
+    }
+  }
+
+  protected onNodeResized({ node }: EventArgs['node:change:size']) {
+    if (node.hasParent()) {
+      const parent = this.getRootNode(node) as Cell
+      this.unselect(parent)
+      this.select(parent)
+
+      this.updateGroupBounds(node)
+    }
   }
 
   protected firstCell = true
@@ -841,6 +897,10 @@ export class Selection
     this.updateGroupBounds(edge)
   }
 
+  protected onEdgeVerticesChanged({ edge }: EdgeChangeArgs<Point.PointLike[]>) {
+    this.updateGroupBounds(edge)
+  }
+
   protected onEdgeMove({ edge }: EventArgs['edge:move']) {
     if (!this.firstCell) return
     this.movingSelectedCells = []
@@ -882,6 +942,9 @@ export class Selection
   }
 
   protected onNodeMoved({ node }: EventArgs['node:moved']) {
+    if (this.blockClick.includes(node)) {
+      this.blockClick = []
+    }
     this.movingSelectedCells.length && this.graph.cleanSelection()
     this.movingSelectedCells.forEach((cell) => {
       this.select(cell)
@@ -892,6 +955,9 @@ export class Selection
   }
 
   protected onEdgeMoved({ edge }: EventArgs['edge:moved']) {
+    if (this.blockClick.includes(edge)) {
+      this.blockClick = []
+    }
     this.movingSelectedCells.length && this.graph.cleanSelection()
     this.movingSelectedCells.forEach((cell) => {
       this.select(cell)
