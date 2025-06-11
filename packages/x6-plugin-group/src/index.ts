@@ -95,7 +95,7 @@ export class Group
     const pangle = node.getAngle()
 
     node.prop('startAngle', pangle, { silent: true })
-    //! node.prop('startAngle') && node.prop('startAngle', 0)
+    node.prop('pCenter', node.getBBox().getCenter(), { silent: true })
     const children = node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child: Cell) => {
@@ -111,10 +111,13 @@ export class Group
             const targetPoint = new Point(target.x, target.y)
             child.prop('edgeTargetStart', targetPoint)
           }
+          const vertices = child.getVertices()
+          if (vertices && vertices.length > 0) {
+            child.prop('edgeVertices', vertices)
+          }
         } else if (child.isNode()) {
           const cangle = (child as Node).getAngle()
           child.prop('startAngle', cangle - pangle, { silent: true })
-          //    child.prop('isRotating', true)
           const cbbox = child.getBBox()
           child.prop('startBBox', cbbox)
         }
@@ -125,15 +128,14 @@ export class Group
   protected onNodeRotating(params: any) {
     const pangle = params.node.getAngle()
     const startAngle = params.node.prop('startAngle')
-    const pcenter = params.node.getBBox().getCenter()
+    const pcenter = params.node.prop('pCenter')
     const children = params.node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child: Cell) => {
-        // if (child.getChildren()) return
-        // const childView = this.graph.findViewByCell(child.id)
         if (child.isEdge()) {
           const source = child.prop('edgeSourceStart')?.clone() || null
           const target = child.prop('edgeTargetStart')?.clone() || null
+          const vertices = child.prop('edgeVertices') || null
           source &&
             child.setSource(
               source.rotate(-(pangle - startAngle), pcenter),
@@ -150,6 +152,16 @@ export class Group
                 async: false,
               },
             )
+          const newVertices: Array<Point> = []
+          vertices &&
+            vertices.forEach((vertex: Point.PointLike) => {
+              const vertice = new Point(vertex.x, vertex.y)
+              vertice.rotate(-(pangle - startAngle), pcenter)
+              newVertices.push(vertice)
+            })
+          if (newVertices.length > 0) {
+            child.setVertices(newVertices)
+          }
         } else if (child.isNode()) {
           const csize = child.getSize()
           const cposition = child.getPosition()
@@ -172,10 +184,6 @@ export class Group
   }
 
   protected onNodeRotated({ node }: { node: Node }) {
-    // const pangle = node.getAngle()
-    // node.prop('startAngle', pangle, { silent: true })
-    // node.prop('isRotating', false)
-
     const children = node.getDescendants()
 
     if (children?.length > 0) {
@@ -184,18 +192,15 @@ export class Group
         if (child.isEdge()) {
           child.removeProp('edgeSourceStart')
           child.removeProp('edgeTargetStart')
+          child.removeProp('edgeVertices')
         } else if (child.isNode()) {
-          // child.prop('isRotating', false)
-          // const cangle = (child as Node).getAngle()
-          // child.prop('startAngle', cangle - pangle, { silent: true })
           child.removeProp('startAngle')
           child.removeProp('startBBox')
         }
       })
     }
-    // node.prop('startAngle', pangle, { silent: true })
-    // node.prop('isRotating', false)
     node.removeProp('startBBox')
+    node.removeProp('pCenter')
   }
 
   protected onNodeResize({ e, node }: { e: EventArgs; node: Node }) {
@@ -203,7 +208,6 @@ export class Group
     const bbox = node.getBBox()
 
     node.prop('startBBox', bbox)
-    //  node.prop('isResizing', true)
     node.prop('dragPort', dragPort)
     if (node.prop('xFlipped') === undefined) {
       node.prop('xFlipped', false)
@@ -227,6 +231,10 @@ export class Group
             const targetPoint = new Point(target.x, target.y)
             child.prop('edgeTargetStart', targetPoint)
           }
+          const vertices = child.getVertices()
+          if (vertices && vertices.length > 0) {
+            child.prop('edgeVertices', vertices)
+          }
         }
 
         //  child.prop('isResizing', true)
@@ -238,16 +246,6 @@ export class Group
         if (child.prop('yFlipped') === undefined) {
           child.prop('yFlipped', false)
         }
-        // const mat = Dom.createSVGMatrix({
-        //   a: 2,
-        //   b: 0,
-        //   c: 0,
-        //   d: 2,
-        //   e: 10,
-        //   f: 10,
-        // })
-
-        // node.setMatrix(mat)
       })
     }
   }
@@ -277,7 +275,6 @@ export class Group
     // This is a rectangle in size of the un-rotated node.
     const pStartBBox = node.prop('startBBox')
     // note x and y cursor positions round to grid intervals
-    // setSelectedNodes((s) => s.map((el, index) => el)); // very slowed cause jumpy ui but required (need momosing) not needed when using Signia
     const pAngle = node.angle()
     const pOrigDragPort = node.prop('dragPort') // this is the original port that is being dragged
     let pCurrDragPort:
@@ -603,26 +600,35 @@ export class Group
           // translate shape from cImageFixedPoint
           return cImageFixedPoint.clone().add(xOffsetTrans, yOffsetTrans)
         }
+        if (child.isEdge()) {
+          const sSourcenode = child.prop('edgeSourceStart') || null
+          const sTargetnode = child.prop('edgeTargetStart') || null
+          const sVertices = child.prop('edgeVertices') || null
 
-        const sSourcenode = child.prop('edgeSourceStart') || null
-        const sTargetnode = child.prop('edgeTargetStart') || null
-
-        const cFixedSourcePoint =
-          new Point(sSourcenode?.x, sSourcenode?.y) || null
-        const cFixedTargetPoint =
-          new Point(sTargetnode?.x, sTargetnode?.y) || null
-
-        sSourcenode &&
-          child.isEdge() &&
-          child.setSource(getTranslatedPoint(cFixedSourcePoint), undefined, {
-            async: false,
-          })
-        sTargetnode &&
-          child.isEdge() &&
-          child.setTarget(getTranslatedPoint(cFixedTargetPoint), undefined, {
-            async: false,
-          })
-
+          const cFixedSourcePoint =
+            new Point(sSourcenode?.x, sSourcenode?.y) || null
+          const cFixedTargetPoint =
+            new Point(sTargetnode?.x, sTargetnode?.y) || null
+          sSourcenode &&
+            child.isEdge() &&
+            child.setSource(getTranslatedPoint(cFixedSourcePoint), undefined, {
+              async: false,
+            })
+          sTargetnode &&
+            child.isEdge() &&
+            child.setTarget(getTranslatedPoint(cFixedTargetPoint), undefined, {
+              async: false,
+            })
+          const newVertices: Array<Point> = []
+          sVertices &&
+            sVertices.forEach((vertex: Point.PointLike) => {
+              const vertice = new Point(vertex.x, vertex.y)
+              newVertices.push(getTranslatedPoint(vertice))
+            })
+          if (newVertices.length > 0) {
+            child.setVertices(newVertices)
+          }
+        }
         let cCenter = new Point(0, 0)
         let cOrigin = new Point(0, 0)
 
@@ -704,6 +710,11 @@ export class Group
         child.removeProp('dragPort')
         child.removeProp('xFlipped')
         child.removeProp('yFlipped')
+        if (child.isEdge()) {
+          child.removeProp('edgeSourceStart')
+          child.removeProp('edgeTargetStart')
+          child.removeProp('edgeVertices')
+        }
       })
     }
   }

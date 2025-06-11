@@ -313,10 +313,12 @@ export class Edge<
   }
 
   protected getTerminalCell(type: Edge.TerminalType) {
+    // eslint-disable-next-line no-underscore-dangle
     if (this.model) {
       const cellId =
         type === 'source' ? this.getSourceCellId() : this.getTargetCellId()
       if (cellId) {
+        // eslint-disable-next-line no-underscore-dangle
         return this.model.getCell(cellId)
       }
     }
