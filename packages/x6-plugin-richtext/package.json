@@ -1,0 +1,67 @@
+{
+  "name": "@antv/x6-plugin-richtext",
+  "version": "2.2.4",
+  "description": "rich text plugin for X6",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "unpkg": "dist/index.js",
+  "jsdelivr": "dist/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "dist",
+    "es",
+    "lib",
+    "src"
+  ],
+  "keywords": [
+    "plugin",
+    "text",
+    "x6",
+    "antv"
+  ],
+  "scripts": {
+    "clean:turbo": "rss",
+    "clean:build": "rss",
+    "clean:coverage": "rss",
+    "clean": "rss",
+    "build:esm": "rss",
+    "build:cjs": "rss",
+    "build:umd": "rss",
+    "build:dev": "rss",
+    "build:watch": "rss",
+    "build:watch:esm": "rss",
+    "build:watch:cjs": "rss",
+    "build": "rss",
+    "prebuild": "rss",
+    "test": "rss",
+    "coveralls": "rss",
+    "pretest": "rss"
+  },
+  "dependencies": {
+    "@lexical/rich-text": "^0.32.1",
+    "lexical": "^0.32.1"
+  },
+  "devDependencies": {
+    "@antv/x6": "file:..\\x6",
+    "@antv/x6-common": "file:..\\x6-common",
+    "@antv/x6-geometry": "file:..\\x6-geometry"
+  },
+  "author": {
+    "name": "gelvidge",
+    "email": "garethelvidge@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://x6.antv.antgroup.com/tutorial/plugins/history",
+  "bugs": {
+    "url": "https://github.com/antvis/x6/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antvis/x6.git",
+    "directory": "packages/x6-plugin-richtext"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  }
+}
