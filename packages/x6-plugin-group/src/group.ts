@@ -29,31 +29,10 @@ export class GroupImpl extends View<GroupImpl.EventArgs> {
       })
       this.options.collection = this.collection
     }
-
-    // this.startListening()
   }
-
-  //  protected startListening() {
-  //    const { graph } = this
-
-  //   graph.on('scale', this.onGraphTransformed, this);
-  //  graph.on('translate', this.onGraphTransformed, this);
-  //   graph.model.on('updated', this.onModelUpdated, this);
-  //  }
-
-  // protected stopListening() {
-  //   const { graph } = this
-
-  //   this.undelegateEvents()
-
-  // graph.off('scale', this.onGraphTransformed, this);
-  // graph.off('translate', this.onGraphTransformed, this);
-  // graph.model.off('updated', this.onModelUpdated, this);
-  // }
 
   @View.dispose()
   dispose() {
-    // this.clean();
     this.remove()
     this.off()
   }

@@ -91,7 +91,7 @@ export class Group
   }
 
   protected onNodeRotate({ node }: { node: Node }) {
-    // node.prop('isRotating', true)
+    this.graph.startBatch('rotation')
     const pangle = node.getAngle()
 
     node.prop('startAngle', pangle, { silent: true })
@@ -103,23 +103,23 @@ export class Group
           const source = child.getSourceCell() ? null : child.getSourcePoint()
           if (source) {
             const sourcePoint = new Point(source.x, source.y)
-            child.prop('edgeSourceStart', sourcePoint)
+            child.prop('edgeSourceStart', sourcePoint, { silent: true })
           }
 
           const target = child.getTargetCell() ? null : child.getTargetPoint()
           if (target) {
             const targetPoint = new Point(target.x, target.y)
-            child.prop('edgeTargetStart', targetPoint)
+            child.prop('edgeTargetStart', targetPoint, { silent: true })
           }
           const vertices = child.getVertices()
           if (vertices && vertices.length > 0) {
-            child.prop('edgeVertices', vertices)
+            child.prop('edgeVertices', vertices, { silent: true })
           }
         } else if (child.isNode()) {
           const cangle = (child as Node).getAngle()
           child.prop('startAngle', cangle - pangle, { silent: true })
           const cbbox = child.getBBox()
-          child.prop('startBBox', cbbox)
+          child.prop('startBBox', cbbox, { silent: true })
         }
       })
     }
@@ -172,9 +172,7 @@ export class Group
           ccenter.rotate(-(pangle - startAngle), pcenter)
           const dx = ccenter.x - csize.width / 2 - cposition.x
           const dy = ccenter.y - csize.height / 2 - cposition.y
-          child.setPosition(cposition.x + dx, cposition.y + dy, {
-            silent: true,
-          })
+          child.setPosition(cposition.x + dx, cposition.y + dy)
           child.rotate(pangle - cangle + cStartAngle, {
             center: null,
           })
@@ -188,32 +186,32 @@ export class Group
 
     if (children?.length > 0) {
       children.forEach((child) => {
-        //   if (child.getChildren()) return
         if (child.isEdge()) {
-          child.removeProp('edgeSourceStart')
-          child.removeProp('edgeTargetStart')
-          child.removeProp('edgeVertices')
+          child.removeProp('edgeSourceStart', { silent: true })
+          child.removeProp('edgeTargetStart', { silent: true })
+          child.removeProp('edgeVertices', { silent: true })
         } else if (child.isNode()) {
-          child.removeProp('startAngle')
-          child.removeProp('startBBox')
+          child.removeProp('startAngle', { silent: true })
+          child.removeProp('startBBox', { silent: true })
         }
       })
     }
-    node.removeProp('startBBox')
-    node.removeProp('pCenter')
+    node.removeProp('startBBox', { silent: true })
+    node.removeProp('pCenter', { silent: true })
+    this.graph.stopBatch('rotation', { silent: true })
   }
 
   protected onNodeResize({ e, node }: { e: EventArgs; node: Node }) {
     const dragPort = e.data[Object.keys(e.data)[0]].relativeDirection
     const bbox = node.getBBox()
 
-    node.prop('startBBox', bbox)
-    node.prop('dragPort', dragPort)
+    node.prop('startBBox', bbox, { silent: true })
+    node.prop('dragPort', dragPort, { silent: true })
     if (node.prop('xFlipped') === undefined) {
-      node.prop('xFlipped', false)
+      node.prop('xFlipped', false, { silent: true })
     }
     if (node.prop('yFlipped') === undefined) {
-      node.prop('yFlipped', false)
+      node.prop('yFlipped', false, { silent: true })
     }
 
     const children = node.getDescendants()
@@ -223,28 +221,28 @@ export class Group
           const source = child.getSourceCell() ? null : child.getSourcePoint()
           if (source) {
             const sourcePoint = new Point(source.x, source.y)
-            child.prop('edgeSourceStart', sourcePoint)
+            child.prop('edgeSourceStart', sourcePoint, { silent: true })
           }
 
           const target = child.getTargetCell() ? null : child.getTargetPoint()
           if (target) {
             const targetPoint = new Point(target.x, target.y)
-            child.prop('edgeTargetStart', targetPoint)
+            child.prop('edgeTargetStart', targetPoint, { silent: true })
           }
           const vertices = child.getVertices()
           if (vertices && vertices.length > 0) {
-            child.prop('edgeVertices', vertices)
+            child.prop('edgeVertices', vertices, { silent: true })
           }
         }
 
         //  child.prop('isResizing', true)
         const cbbox = child.getBBox()
-        child.prop('startBBox', cbbox)
+        child.prop('startBBox', cbbox, { silent: true })
         if (child.prop('xFlipped') === undefined) {
-          child.prop('xFlipped', false)
+          child.prop('xFlipped', false, { silent: true })
         }
         if (child.prop('yFlipped') === undefined) {
-          child.prop('yFlipped', false)
+          child.prop('yFlipped', false, { silent: true })
         }
       })
     }
@@ -473,8 +471,8 @@ export class Group
       }
     }
 
-    node.prop('xFlipped', xFlipped)
-    node.prop('yFlipped', yFlipped)
+    node.prop('xFlipped', xFlipped, { silent: true })
+    node.prop('yFlipped', yFlipped, { silent: true })
 
     const children = node.getDescendants()
 
@@ -687,8 +685,8 @@ export class Group
             }
           }
 
-          child.prop('xFlipped', xFlipped)
-          child.prop('yFlipped', yFlipped)
+          child.prop('xFlipped', xFlipped, { silent: true })
+          child.prop('yFlipped', yFlipped, { silent: true })
         }
         //* ***************************************************************** */
       })
@@ -697,23 +695,23 @@ export class Group
 
   protected onNodeResized({ node }: { node: Node }) {
     // node.prop('isResizing', false)
-    node.removeProp(['startBBox'])
-    node.removeProp(['dragPort'])
-    node.removeProp('xFlipped')
-    node.removeProp('yFlipped')
+    node.removeProp(['startBBox'], { silent: true })
+    node.removeProp(['dragPort'], { silent: true })
+    node.removeProp('xFlipped', { silent: true })
+    node.removeProp('yFlipped', { silent: true })
 
     const children = node.getDescendants()
     if (children?.length > 0) {
       children.forEach((child) => {
         // child.prop('isResizing', false)
-        child.removeProp('startBBox')
-        child.removeProp('dragPort')
-        child.removeProp('xFlipped')
-        child.removeProp('yFlipped')
+        child.removeProp('startBBox', { silent: true })
+        child.removeProp('dragPort', { silent: true })
+        child.removeProp('xFlipped', { silent: true })
+        child.removeProp('yFlipped', { silent: true })
         if (child.isEdge()) {
-          child.removeProp('edgeSourceStart')
-          child.removeProp('edgeTargetStart')
-          child.removeProp('edgeVertices')
+          child.removeProp('edgeSourceStart', { silent: true })
+          child.removeProp('edgeTargetStart', { silent: true })
+          child.removeProp('edgeVertices', { silent: true })
         }
       })
     }

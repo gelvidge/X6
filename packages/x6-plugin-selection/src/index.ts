@@ -362,19 +362,20 @@ export class Selection
       })
 
       childArray.forEach((cell) => {
-        cell.setParent(parent)
+        cell.setParent(parent, { silent: true })
       })
-
-      parent.setChildren(childArray)
+      this.graph.disablePlugins('history')
       this.graph.addNode(parent)
+      this.graph.enablePlugins('history')
+      parent.setChildren(childArray, { silent: true })
+
       if (typeof (this.graph as any).resetSelection === 'function') {
         ;(this.graph as any).resetSelection(parent)
       }
     }
     this.graph.stopBatch('grouping')
   }
-  // ***1 things to crorrect:
-  // -when grouping a rotated group with added in cell, problems with parent afterwards
+
   unGroupCells(cells: Cell[]) {
     this.graph.startBatch('ungrouping')
     const groupArray: Cell[] = []
@@ -393,10 +394,12 @@ export class Selection
       children && this.graph.select(children)
 
       children?.forEach((child) => {
-        child.setParent(null)
+        child.setParent(null, { silent: true })
       })
-      group.setChildren(null)
+      group.setChildren(null, { silent: true })
+      this.graph.disablePlugins('history')
       group.remove()
+      this.graph.enablePlugins('history')
     })
     this.graph.stopBatch('ungrouping')
   }
@@ -629,9 +632,12 @@ export class Selection
   }: SelectionImpl.SelectionEventArgs['cell:unselected']) {
     // this.dcSelected = []
     if (cell.getChildren()) {
-      cell.setAttrs({
-        body: { visibility: 'hidden' },
-      })
+      cell.setAttrs(
+        {
+          body: { visibility: 'hidden' },
+        },
+        { silent: true },
+      )
     }
     cell.isNode() && this.graph.clearTransformWidget(cell)
   }
@@ -641,9 +647,12 @@ export class Selection
   }: SelectionImpl.SelectionEventArgs['cell:selected']) {
     cell.isNode() && this.graph.createTransformWidget(cell, true)
     if (cell.getChildren()) {
-      cell.setAttrs({
-        body: { visibility: 'visible' },
-      })
+      cell.setAttrs(
+        {
+          body: { visibility: 'visible' },
+        },
+        { silent: true },
+      )
     }
   }
 
