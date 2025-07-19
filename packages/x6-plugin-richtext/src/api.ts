@@ -5,6 +5,7 @@ import { Richtext } from './index'
 declare module '@antv/x6/lib/graph/graph' {
   interface Graph {
     isRichtextEnabled: () => boolean
+    onTextChange: (callback: () => void) => void
   }
 }
 

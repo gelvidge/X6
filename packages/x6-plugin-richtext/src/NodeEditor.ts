@@ -1,4 +1,4 @@
-import { Basecoat, Graph } from '@antv/x6'
+import { Basecoat, Graph, Cell, Node } from '@antv/x6'
 import {
   $createParagraphNode,
   $getRoot,
@@ -6,28 +6,15 @@ import {
   CreateEditorArgs,
   FORMAT_ELEMENT_COMMAND,
   LexicalEditor,
-  $getSelection,
-  $isRangeSelection,
-  $isRootOrShadowRoot,
-  ElementNode,
-  RangeSelection,
-  TextNode,
 } from 'lexical'
+import { Point } from '@antv/x6-geometry'
+
+import { mergeRegister } from '@lexical/utils'
+
+import { registerRichText } from '@lexical/rich-text'
 
 import {
-  $findMatchingParent,
-  $getNearestNodeOfType,
-  mergeRegister,
-} from '@lexical/utils'
-import {
-  $getSelectionStyleValueForProperty,
-  $isAtNodeEnd,
-} from '@lexical/selection'
-import { $isHeadingNode, registerRichText } from '@lexical/rich-text'
-import { $isLinkNode } from '@lexical/link'
-
-import {
-  $isListNode,
+  // $isListNode,
   ListNode,
   ListItemNode,
   registerCheckList,
@@ -36,74 +23,42 @@ import {
 
 import lexicalTheme from './lexicalTheme'
 
-const getSelectedNode = function (
-  selection: RangeSelection,
-): TextNode | ElementNode {
-  const { anchor } = selection
-  const { focus } = selection
-  const anchorNode = selection.anchor.getNode()
-  const focusNode = selection.focus.getNode()
-  if (anchorNode === focusNode) {
-    return anchorNode
-  }
-  const isBackward = selection.isBackward()
-  if (isBackward) {
-    return $isAtNodeEnd(focus) ? anchorNode : focusNode
-  }
-  return $isAtNodeEnd(anchor) ? anchorNode : focusNode
-}
-
-const getDOMRangeRect = function (
-  nativeSelection: Selection,
-  rootElement: HTMLElement,
-): DOMRect {
-  const domRange = nativeSelection.getRangeAt(0)
-
-  let rect
-
-  if (nativeSelection.anchorNode === rootElement) {
-    let inner = rootElement
-    while (inner.firstElementChild != null) {
-      inner = inner.firstElementChild as HTMLElement
-    }
-    rect = inner.getBoundingClientRect()
-  } else {
-    rect = domRange.getBoundingClientRect()
-  }
-
-  return rect
-}
-
 export class NodeEditor extends Basecoat {
   private nodeTextDiv: HTMLElement
+  private textContainer: HTMLElement
   private editor: LexicalEditor
   private graph: Graph
   private state: any
-  private nodeId: string
-  private position: DOMRect | null = null
-  private observers: Array<(object: object) => object> = []
+  private onUpdate: ((id: string, editor: LexicalEditor) => void) | undefined
+  private onCreate: ((id: string, editor: LexicalEditor) => void) | undefined
+  private node: Node
   private removeUpdateListener: () => void
+  private scrollElement: HTMLElement | null = null
+  private scrollTop: number | undefined
+  private scrollLeft: number | undefined
 
-  constructor(graph: Graph, nodeId: string) {
+  constructor(
+    nodeId: string,
+    graph: Graph,
+    onUpdate?: (id: string, editor: LexicalEditor) => void,
+    onCreate?: (id: string, editor: LexicalEditor) => void,
+  ) {
     super()
     this.graph = graph
-    this.nodeId = nodeId
+    this.node = graph.getCellById(nodeId) as Node
+    this.onUpdate = onUpdate || undefined
+    this.onCreate = onCreate || undefined
+    this.scrollTop = undefined
+    this.scrollLeft = undefined
   }
 
-  subscribe(func: (object: object) => object) {
-    this.observers.push(func)
-  }
-
-  unsubscribe(func: () => object) {
-    this.observers = this.observers.filter((observer) => observer !== func)
-  }
-
-  notify(data: object) {
-    this.observers.forEach((observer) => observer(data))
-  }
-
-  createText(nodeDiv: HTMLElement, nodeText?: string): void {
+  createEditorJS(nodeDiv: HTMLElement, nodeText?: string): void {
     this.nodeTextDiv = nodeDiv
+    this.textContainer = nodeDiv.parentNode as HTMLElement
+
+    this.scrollElement = document.getElementsByClassName(
+      'x6-graph-scroller',
+    )[0] as HTMLElement
     const config: CreateEditorArgs = {
       namespace: 'x6',
       onError: console.error,
@@ -126,111 +81,60 @@ export class NodeEditor extends Basecoat {
       $getRoot().selectEnd()
     })
 
-    this.removeUpdateListener = this.editor.registerUpdateListener(
-      ({ editorState }) => {
-        editorState.read(() => {
-          const selection = $getSelection()
-
-          if ($isRangeSelection(selection)) {
-            const rootElement = this.editor.getRootElement()
-            const nativeSelection = window.getSelection()
-            const anchorNode = selection.anchor.getNode()
-            let element =
-              anchorNode.getKey() === 'root'
-                ? anchorNode
-                : $findMatchingParent(anchorNode, (e) => {
-                    const parent = e.getParent()
-                    return parent !== null && $isRootOrShadowRoot(parent)
-                  })
-
-            if (element === null) {
-              element = anchorNode.getTopLevelElementOrThrow()
-            }
-
-            const node = getSelectedNode(selection)
-            const parent = node.getParent()
-            let type = null
-            if (
-              nativeSelection !== null &&
-              !nativeSelection.isCollapsed &&
-              rootElement !== null &&
-              rootElement.contains(nativeSelection.anchorNode)
-            ) {
-              this.position = getDOMRangeRect(nativeSelection, rootElement)
-            } else this.position = null
-
-            if ($isListNode(element)) {
-              const parentList = $getNearestNodeOfType<ListNode>(
-                anchorNode,
-                ListNode,
-              )
-              type = parentList
-                ? parentList.getListType()
-                : element.getListType()
-            } else {
-              type = $isHeadingNode(element)
-                ? element.getTag()
-                : element.getType()
-            }
-            this.state = {
-              nodeId: this.nodeId,
-              position: this.position,
-              isBold: selection.hasFormat('bold'),
-              isCode: selection.hasFormat('code'),
-              isItalic: selection.hasFormat('italic'),
-              isStrikethrough: selection.hasFormat('strikethrough'),
-              isUnderline: selection.hasFormat('underline'),
-              script: selection.hasFormat('superscript')
-                ? 'superscript'
-                : selection.hasFormat('subscript')
-                ? 'subscript'
-                : '',
-
-              fontSize: $getSelectionStyleValueForProperty(
-                selection,
-                'font-size',
-                '12px',
-              ),
-              fontColor: $getSelectionStyleValueForProperty(
-                selection,
-                'color',
-                '#000',
-              ),
-              bgColor: $getSelectionStyleValueForProperty(
-                selection,
-                'background-color',
-                '#fff',
-              ),
-              fontFamily: $getSelectionStyleValueForProperty(
-                selection,
-                'font-family',
-                'Arial',
-              ),
-              isLink: $isLinkNode(parent) || $isLinkNode(node),
-              alignment: parent?.getFormatType() || 'left',
-              blockType: type,
-            }
-
-            this.notify(this.state)
-
-            // Update text format
-          }
-        })
-      },
-    )
+    this.removeUpdateListener = this.editor.registerUpdateListener(() => {
+      this.onUpdate && this.onUpdate(this.node.id, this.editor)
+      this.updateNodeEditorTransform()
+      if (this.scrollElement?.onscroll === null) {
+        this.scrollElement.onscroll = () => {
+          if (this.scrollLeft && this.scrollTop)
+            this.scrollElement?.scrollTo(this.scrollLeft, this.scrollTop)
+        }
+      }
+    })
 
     this.editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')
-    // this.editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic')
 
     if (nodeText) {
       this.editor.setEditorState(this.editor.parseEditorState(nodeText))
     }
 
     this.nodeTextDiv.addEventListener('blur', this.onBlur)
+    this.nodeTextDiv.addEventListener('focus', this.onFocus)
+    this.onCreate && this.onCreate(this.node.id, this.editor)
   }
 
   getState = () => {
     return this.state
+  }
+
+  updateNodeEditorTransform = () => {
+    const { graph } = this
+
+    if (!this.textContainer || !this.nodeTextDiv) {
+      return
+    }
+
+    let pos = Point.create()
+
+    const minWidth = 10
+
+    const bbox = (this.node as unknown as Cell).getBBox()
+    const textBBox = this.nodeTextDiv.getBoundingClientRect()
+    pos = bbox.topLeft
+    const maxWidth = bbox.width - 8
+
+    const angle = (this.node as Node).getAngle()
+    const scale = graph.scale()
+
+    const { style } = this.nodeTextDiv
+    pos = graph.localToGraph(pos)
+    style.left = `${pos.x + bbox.width / 2 - textBBox.width / 2}px`
+    style.top = `${pos.y + bbox.height / 2 - textBBox.height / 2}px`
+    style.transform = `scale(${scale.sx}, ${scale.sy}) `
+    style.minWidth = `${minWidth}px`
+    style.maxWidth = `${maxWidth}px`
+    // style.width = `${maxWidth}px`
+    style.rotate = `${angle || 0}deg`
   }
 
   onBlur = (e: FocusEvent): void => {
@@ -240,11 +144,31 @@ export class NodeEditor extends Basecoat {
       lexicalText: JSON.stringify(this.editor.getEditorState().toJSON()),
     }
     node.setData(lexicalData, { overwrite: true, silent: true })
+
+    if ((e.target as HTMLElement).id.startsWith('x6-text-container')) return
+    if (this.scrollElement) {
+      this.scrollElement.onscroll = null
+      this.scrollElement.removeEventListener('wheel', this.removeScrollBlock)
+    }
+  }
+
+  onFocus = (e: FocusEvent): void => {
+    if ((e.target as HTMLElement).id.startsWith('x6-text-container')) return
+    this.scrollTop = this.scrollElement?.scrollTop
+    this.scrollLeft = this.scrollElement?.scrollLeft
+    this.scrollElement?.addEventListener('wheel', this.removeScrollBlock)
+  }
+
+  removeScrollBlock = () => {
+    if (this.scrollElement) {
+      this.scrollElement.onscroll = null
+    }
   }
 
   remove(): this {
     if (this.nodeTextDiv) {
       this.nodeTextDiv.removeEventListener('blur', this.onBlur)
+      this.nodeTextDiv.removeEventListener('focus', this.onFocus)
       this.removeUpdateListener()
     }
     return this

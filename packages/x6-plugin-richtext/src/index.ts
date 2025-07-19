@@ -1,6 +1,6 @@
 import { Basecoat, CssLoader, Graph, Node } from '@antv/x6'
-import { Point } from '@antv/x6-geometry'
 import { Dom } from '@antv/x6-common'
+import { LexicalEditor } from 'Lexical'
 import { NodeEditor } from './NodeEditor'
 
 // import { EventArgs } from '@antv/x6-common/lib/event/types'
@@ -12,6 +12,12 @@ export class Richtext extends Basecoat implements Graph.Plugin {
   private graph: Graph
   private textDiv: HTMLDivElement
   private editors: Map<string, NodeEditor>
+  private onTextUpdate?:
+    | ((id: string, editor: LexicalEditor) => void)
+    | undefined
+  private onTextCreated?:
+    | ((id: string, editor: LexicalEditor) => void)
+    | undefined
 
   public readonly options: Richtext.Options
 
@@ -19,9 +25,15 @@ export class Richtext extends Basecoat implements Graph.Plugin {
     return this.options.enabled !== true
   }
 
-  constructor(options: Richtext.Options = {}) {
+  constructor(
+    onTextUpdate?: (id: string, editor: LexicalEditor) => void,
+    onTextCreated?: (id: string, editor: LexicalEditor) => void,
+    options: Richtext.Options = {},
+  ) {
     super()
     this.options = options
+    this.onTextUpdate = onTextUpdate || undefined
+    this.onTextCreated = onTextCreated || undefined
     CssLoader.ensure(this.name, content)
   }
 
@@ -82,17 +94,17 @@ export class Richtext extends Basecoat implements Graph.Plugin {
 
     this.graph.on(
       'node:change:position',
-      ({ node }) => this.updateNodeEditorTransform(node),
+      ({ node }) => this.getEditor(node.id)?.updateNodeEditorTransform(),
       this,
     )
     this.graph.on(
       'node:change:size',
-      ({ node }) => this.updateNodeEditorTransform(node),
+      ({ node }) => this.getEditor(node.id)?.updateNodeEditorTransform(),
       this,
     )
     this.graph.on(
       'node:change:angle',
-      ({ node }) => this.updateNodeEditorTransform(node),
+      ({ node }) => this.getEditor(node.id)?.updateNodeEditorTransform(),
       this,
     )
     this.graph.on('scale', this.updateAllNodesEditorTransform, this)
@@ -104,17 +116,17 @@ export class Richtext extends Basecoat implements Graph.Plugin {
     this.graph.off('node:removed', this.onNodeRemoved, this)
     this.graph.off(
       'node:change:position',
-      ({ node }) => this.updateNodeEditorTransform(node),
+      ({ node }) => this.getEditor(node.id)?.updateNodeEditorTransform(),
       this,
     )
     this.graph.off(
       'node:change:size',
-      ({ node }) => this.updateNodeEditorTransform(node),
+      ({ node }) => this.getEditor(node.id)?.updateNodeEditorTransform(),
       this,
     )
     this.graph.off(
       'node:change:angle',
-      ({ node }) => this.updateNodeEditorTransform(node),
+      ({ node }) => this.getEditor(node.id)?.updateNodeEditorTransform(),
       this,
     )
     this.graph.off('scale', this.updateAllNodesEditorTransform, this)
@@ -128,53 +140,52 @@ export class Richtext extends Basecoat implements Graph.Plugin {
   }
 
   createText({ node }: { node: Node }) {
-    if (node.view === 'react-shape-view') return
+    if (node.view === 'react-shape-view' || node.getChildCount() > 0) return
     const nodeDivExists = this.getNodeTextDiv(node)
-    if (node.getChildCount() > 0) {
-      return
-    }
+
     if (nodeDivExists) {
-      this.updateNodeEditorTransform(node)
+      this.getEditor(node.id)?.updateNodeEditorTransform()
       return
     }
 
-    const nodeText = new NodeEditor(this.graph, node.id)
+    const nodeText = new NodeEditor(
+      node.id,
+      this.graph,
+      this.onTextUpdate,
+      this.onTextCreated,
+    )
     this.editors.set(node.id, nodeText)
 
     const nodeDiv = this.createNodeTextDiv(node)
-    nodeText.createText(nodeDiv)
+    nodeText.createEditorJS(nodeDiv)
 
-    this.updateNodeEditorTransform(node)
+    this.getEditor(node.id)?.updateNodeEditorTransform()
   }
 
-  updateNodeEditorTransform = (node: Node) => {
-    const { graph, textDiv } = this
+  updateAllNodesEditorTransform = () => {
+    this.graph.getNodes().forEach((node) => {
+      this.getEditor(node.id)?.updateNodeEditorTransform()
+    })
+  }
 
-    if (!textDiv) {
-      return
+  onNodeAdded = ({ node }: { node: Node }) => {
+    if (node.view === 'react-shape-view') return
+    const nodeData = node.getData()
+    const nodeText =
+      nodeData && 'lexicalText' in nodeData ? nodeData.lexicalText : undefined
+    if (nodeText) {
+      const nodeDiv = this.createNodeTextDiv(node)
+      const nodeTextEditor = new NodeEditor(
+        node.id,
+        this.graph,
+        this.onTextUpdate,
+        this.onTextCreated,
+      )
+      this.editors.set(node.id, nodeTextEditor)
+      nodeTextEditor.createEditorJS(nodeDiv, nodeText)
+
+      nodeTextEditor.updateNodeEditorTransform()
     }
-
-    let pos = Point.create()
-    const minWidth = 20
-
-    const bbox = node.getBBox()
-    pos = bbox.center
-    const maxWidth = bbox.width - 8
-    const translate = 'translate(-50%, -50%)'
-
-    const angle = node.getAngle()
-    const scale = graph.scale()
-    const nodeDiv = this.getNodeTextDiv(node)
-    if (!nodeDiv) return
-    const { style } = nodeDiv
-    pos = graph.localToGraph(pos)
-    style.left = `${pos.x}px`
-    style.top = `${pos.y}px`
-    style.transform = `scale(${scale.sx}, ${scale.sy}) ${translate}`
-    style.minWidth = `${minWidth}px`
-    style.maxWidth = `${maxWidth}px`
-    style.width = `${maxWidth}px`
-    style.rotate = `${angle || 0}deg`
   }
 
   createNodeTextDiv = (node: Node): HTMLElement => {
@@ -183,35 +194,14 @@ export class Richtext extends Basecoat implements Graph.Plugin {
     nodeTextDiv.contentEditable = 'true'
     this.textDiv.appendChild(nodeTextDiv)
 
-    nodeTextDiv.style.pointerEvents = 'none'
+    nodeTextDiv.style.pointerEvents = 'auto'
     nodeTextDiv.style.position = 'absolute'
     nodeTextDiv.style.wordBreak = 'normal'
     nodeTextDiv.focus()
     nodeTextDiv.style.cursor = 'text'
     nodeTextDiv.style.width = 'max-content'
-    nodeTextDiv.style.transformOrigin = 'left top'
 
     return nodeTextDiv
-  }
-
-  updateAllNodesEditorTransform = () => {
-    this.graph.getNodes().forEach((node) => {
-      this.updateNodeEditorTransform(node)
-    })
-  }
-  onNodeAdded = ({ node }: { node: Node }) => {
-    if (node.view === 'react-shape-view') return
-    const nodeData = node.getData()
-    const nodeText =
-      nodeData && 'lexicalText' in nodeData ? nodeData.lexicalText : undefined
-    if (nodeText) {
-      const nodeDiv = this.createNodeTextDiv(node)
-      const nodeTextEditor = new NodeEditor(this.graph, node.id)
-      this.editors.set(node.id, nodeTextEditor)
-      nodeTextEditor.createText(nodeDiv, nodeText)
-
-      this.updateNodeEditorTransform(node)
-    }
   }
 
   getEditor(nodeId: string): NodeEditor | null {
@@ -219,10 +209,6 @@ export class Richtext extends Basecoat implements Graph.Plugin {
       return this.editors.get(nodeId) || null
     }
     return null
-  }
-
-  getLexicalTextDiv(): HTMLElement {
-    return this.textDiv
   }
 
   onNodeRemoved({ node }: { node: Node }): this {
