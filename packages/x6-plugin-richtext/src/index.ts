@@ -199,7 +199,7 @@ export class Richtext extends Basecoat implements Graph.Plugin {
     nodeTextDiv.style.wordBreak = 'normal'
     nodeTextDiv.focus()
     nodeTextDiv.style.cursor = 'text'
-    nodeTextDiv.style.width = 'max-content'
+    // nodeTextDiv.style.width = 'max-content'
 
     return nodeTextDiv
   }

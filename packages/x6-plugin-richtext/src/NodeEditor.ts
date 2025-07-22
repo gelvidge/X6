@@ -121,7 +121,7 @@ export class NodeEditor extends Basecoat {
     const bbox = (this.node as unknown as Cell).getBBox()
     const textBBox = this.nodeTextDiv.getBoundingClientRect()
     pos = bbox.topLeft
-    const maxWidth = bbox.width - 8
+    const maxWidth = bbox.width - 10
 
     const angle = (this.node as Node).getAngle()
     const scale = graph.scale()
@@ -133,7 +133,7 @@ export class NodeEditor extends Basecoat {
     style.transform = `scale(${scale.sx}, ${scale.sy}) `
     style.minWidth = `${minWidth}px`
     style.maxWidth = `${maxWidth}px`
-    // style.width = `${maxWidth}px`
+    style.width = `${maxWidth}px`
     style.rotate = `${angle || 0}deg`
   }
 
