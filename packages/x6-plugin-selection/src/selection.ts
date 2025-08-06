@@ -278,7 +278,7 @@ export class SelectionImpl extends View<SelectionImpl.EventArgs> {
 
   startSelecting(evt: Dom.MouseDownEvent) {
     // Flow: startSelecting => adjustSelection => stopSelecting
-
+    evt.preventDefault()
     evt = this.normalizeEvent(evt) // eslint-disable-line
     this.clean()
     let x
