@@ -462,6 +462,7 @@ export class Selection
     this.graph.on('node:moved', this.onNodeMoved, this)
     this.graph.on('node:resized', this.onNodeResized, this)
     this.graph.on('node:resize', this.onNodeResize, this)
+    this.graph.on('node:transition:finish', this.onNodeChangePosition, this)
     this.graph.on('edge:move', this.onEdgeMove, this)
     this.graph.on('edge:mouseup', this.onEdgeTerminalChanged, this)
     this.graph.on('edge:change:vertices', this.onEdgeVerticesChanged, this)
@@ -480,9 +481,10 @@ export class Selection
     this.graph.off('node:moved', this.onNodeMoved, this)
     this.graph.off('node:resized', this.onNodeResized, this)
     this.graph.off('node:resize', this.onNodeResize, this)
+    this.graph.off('node:transition:finish', this.onNodeChangePosition, this)
     this.graph.off('edge:move', this.onEdgeMove, this)
-    this.graph.on('edge:mouseup', this.onEdgeTerminalChanged, this)
-    this.graph.on('edge:change:vertices', this.onEdgeVerticesChanged, this)
+    this.graph.off('edge:mouseup', this.onEdgeTerminalChanged, this)
+    this.graph.off('edge:change:vertices', this.onEdgeVerticesChanged, this)
     this.graph.off('edge:moved', this.onEdgeMoved, this)
     this.graph.off('cell:click', this.onCellClick, this)
     this.graph.off('cell:selected', this.onCellSelected, this)
@@ -699,11 +701,11 @@ export class Selection
   }
 
   updateGroupBounds(cell: Cell) {
-    const root = this.graph.getRootNode(cell)
+    const root = this.graph.getRootNode(cell) || cell
     if (!root) return
 
-    const rootChildren = root ? root.getDescendants() : []
-    const rootCenter = root ? root.getBBox()?.getCenter() : null
+    const rootChildren = root.getDescendants()
+    const rootCenter = root.getBBox()?.getCenter()
 
     const newRootArray = [] as Cell[]
 
@@ -853,8 +855,8 @@ export class Selection
   protected onNodeResized({ node }: EventArgs['node:change:size']) {
     if (node.hasParent()) {
       const parent = this.getRootNode(node) as Cell
-      this.unselect(parent)
-      this.select(parent)
+      this.unselect(parent, { silent: true })
+      this.select(parent, { silent: true })
 
       this.updateGroupBounds(node)
     }
@@ -880,11 +882,11 @@ export class Selection
         })
         if (selectedChildren === 0) {
           children.forEach((child) => {
-            !this.isSelected(child) && this.select(child)
+            !this.isSelected(child) && this.select(child, { silent: true })
             child.isNode() && this.graph.clearTransformWidget(child)
           })
         } else {
-          this.unselect(cell)
+          this.unselect(cell, { silent: true })
         }
       }
     })
@@ -894,7 +896,7 @@ export class Selection
       if (parentNode) {
         const children = parentNode.getDescendants()
         children.forEach((child) => {
-          this.select(child)
+          this.select(child, { silent: true })
           child.isNode() && this.graph.clearTransformWidget(child)
         })
       }
@@ -928,11 +930,11 @@ export class Selection
         })
         if (selectedChildren === 0) {
           children.forEach((child) => {
-            !this.isSelected(child) && this.select(child)
+            !this.isSelected(child) && this.select(child, { silent: true })
             child.isNode() && this.graph.clearTransformWidget(child)
           })
         } else {
-          this.unselect(cell)
+          this.unselect(cell, { silent: true })
         }
       }
     })
@@ -942,7 +944,7 @@ export class Selection
       if (parentNode) {
         const children = parentNode.getDescendants()
         children.forEach((child) => {
-          this.select(child)
+          this.select(child, { silent: true })
           child.isNode() && this.graph.clearTransformWidget(child)
         })
       }
@@ -950,14 +952,22 @@ export class Selection
     this.firstCell = false
   }
 
+  protected onNodeChangePosition({ node }: { node: Node }) {
+    this.updateGroupBounds(node as unknown as Cell)
+  }
+
   protected onNodeMoved({ node }: EventArgs['node:moved']) {
     if (this.blockClick.includes(node)) {
       this.blockClick = []
     }
-    this.movingSelectedCells.length && this.graph.cleanSelection()
+    this.updateGroupBounds(node)
+    this.movingSelectedCells.length &&
+      this.graph.cleanSelection({ silent: true })
     this.movingSelectedCells.forEach((cell) => {
-      this.select(cell)
+      this.select(cell, { silent: true })
+      cell.isNode() && this.graph.createTransformWidget(cell, true)
     })
+
     this.updateGroupBounds(node)
     this.movingSelectedCells = []
     this.firstCell = true
@@ -967,11 +977,14 @@ export class Selection
     if (this.blockClick.includes(edge)) {
       this.blockClick = []
     }
-    this.movingSelectedCells.length && this.graph.cleanSelection()
-    this.movingSelectedCells.forEach((cell) => {
-      this.select(cell)
-    })
     this.updateGroupBounds(edge)
+    this.movingSelectedCells.length &&
+      this.graph.cleanSelection({ silent: true })
+    this.movingSelectedCells.forEach((cell) => {
+      this.select(cell, { silent: true })
+      cell.isNode() && this.graph.createTransformWidget(cell, true)
+    })
+
     this.movingSelectedCells = []
     this.firstCell = true
   }

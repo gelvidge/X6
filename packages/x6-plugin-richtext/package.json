@@ -38,17 +38,26 @@
     "pretest": "rss"
   },
   "dependencies": {
-    "@lexical/link": "^0.32.1",
-    "@lexical/list": "^0.32.1",
-    "@lexical/rich-text": "^0.32.1",
-    "@lexical/selection": "^0.32.1",
-    "@lexical/utils": "^0.32.1",
-    "lexical": "^0.32.1"
+    "@lexical/link": "latest",
+    "@lexical/list": "latest",
+    "@lexical/react": "latest",
+    "@lexical/rich-text": "latest",
+    "@lexical/history": "latest",
+    "@lexical/selection": "latest",
+    "@lexical/utils": "latest",
+    "@mui/material": "^7.2.0",
+    "lexical": "latest"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "devDependencies": {
-    "@antv/x6": "file:..\\x6",
+    "@antv/x6": "link:..\\x6",
     "@antv/x6-common": "file:..\\x6-common",
-    "@antv/x6-geometry": "file:..\\x6-geometry"
+    "@antv/x6-geometry": "file:..\\x6-geometry",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7"
   },
   "author": {
     "name": "gelvidge",

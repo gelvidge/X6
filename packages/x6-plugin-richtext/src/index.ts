@@ -1,11 +1,13 @@
 import { Basecoat, CssLoader, Graph, Node } from '@antv/x6'
 import { Dom } from '@antv/x6-common'
 import { LexicalEditor } from 'Lexical'
-import { NodeEditor } from './NodeEditor'
+import { NodeEditor, FORMAT_ON_COMMAND } from './NodeEditor'
 
 // import { EventArgs } from '@antv/x6-common/lib/event/types'
 import { content } from './style/raw'
 import './api'
+
+export { FORMAT_ON_COMMAND }
 
 export class Richtext extends Basecoat implements Graph.Plugin {
   public name = 'richtext'
@@ -18,6 +20,7 @@ export class Richtext extends Basecoat implements Graph.Plugin {
   private onTextCreated?:
     | ((id: string, editor: LexicalEditor) => void)
     | undefined
+  private onHistoryChange?: (editor: LexicalEditor) => void
 
   public readonly options: Richtext.Options
 
@@ -28,12 +31,14 @@ export class Richtext extends Basecoat implements Graph.Plugin {
   constructor(
     onTextUpdate?: (id: string, editor: LexicalEditor) => void,
     onTextCreated?: (id: string, editor: LexicalEditor) => void,
+    onHistoryChange?: (editor: LexicalEditor) => void,
     options: Richtext.Options = {},
   ) {
     super()
     this.options = options
     this.onTextUpdate = onTextUpdate || undefined
     this.onTextCreated = onTextCreated || undefined
+    this.onHistoryChange = onHistoryChange || undefined
     CssLoader.ensure(this.name, content)
   }
 
@@ -153,6 +158,7 @@ export class Richtext extends Basecoat implements Graph.Plugin {
       this.graph,
       this.onTextUpdate,
       this.onTextCreated,
+      this.onHistoryChange,
     )
     this.editors.set(node.id, nodeText)
 
@@ -192,12 +198,14 @@ export class Richtext extends Basecoat implements Graph.Plugin {
     const nodeTextDiv = Dom.createElement('div') as HTMLDivElement
     nodeTextDiv.id = `x6-text-${node.id}`
     nodeTextDiv.contentEditable = 'true'
+    nodeTextDiv.spellcheck = false
     this.textDiv.appendChild(nodeTextDiv)
 
     nodeTextDiv.style.pointerEvents = 'auto'
     nodeTextDiv.style.position = 'absolute'
     nodeTextDiv.style.wordBreak = 'normal'
     nodeTextDiv.focus()
+    nodeTextDiv.style.transformOrigin = 'center'
     nodeTextDiv.style.cursor = 'text'
     // nodeTextDiv.style.width = 'max-content'
 

@@ -5,23 +5,28 @@ import {
   createEditor,
   CreateEditorArgs,
   FORMAT_ELEMENT_COMMAND,
+  CAN_UNDO_COMMAND,
+  COMMAND_PRIORITY_EDITOR,
+  KEY_DOWN_COMMAND,
   LexicalEditor,
+  createCommand,
+  LexicalCommand,
+  $getSelection,
+  $isRangeSelection,
 } from 'lexical'
 import { Point } from '@antv/x6-geometry'
-
 import { mergeRegister } from '@lexical/utils'
-
 import { registerRichText } from '@lexical/rich-text'
-
+import { registerHistory, createEmptyHistoryState } from '@lexical/history'
 import {
-  // $isListNode,
   ListNode,
   ListItemNode,
   registerCheckList,
   registerList,
 } from '@lexical/list'
-
 import lexicalTheme from './lexicalTheme'
+
+export const FORMAT_ON_COMMAND: LexicalCommand<number> = createCommand()
 
 export class NodeEditor extends Basecoat {
   private nodeTextDiv: HTMLElement
@@ -31,34 +36,30 @@ export class NodeEditor extends Basecoat {
   private state: any
   private onUpdate: ((id: string, editor: LexicalEditor) => void) | undefined
   private onCreate: ((id: string, editor: LexicalEditor) => void) | undefined
+  private onHistoryChange: ((editor: LexicalEditor) => void) | undefined
   private node: Node
   private removeUpdateListener: () => void
-  private scrollElement: HTMLElement | null = null
-  private scrollTop: number | undefined
-  private scrollLeft: number | undefined
+  private cleanHistory: () => void
 
   constructor(
     nodeId: string,
     graph: Graph,
     onUpdate?: (id: string, editor: LexicalEditor) => void,
     onCreate?: (id: string, editor: LexicalEditor) => void,
+    onHistoryChange?: (editor: LexicalEditor) => void,
   ) {
     super()
     this.graph = graph
     this.node = graph.getCellById(nodeId) as Node
     this.onUpdate = onUpdate || undefined
     this.onCreate = onCreate || undefined
-    this.scrollTop = undefined
-    this.scrollLeft = undefined
+    this.onHistoryChange = onHistoryChange || undefined
   }
 
   createEditorJS(nodeDiv: HTMLElement, nodeText?: string): void {
     this.nodeTextDiv = nodeDiv
     this.textContainer = nodeDiv.parentNode as HTMLElement
 
-    this.scrollElement = document.getElementsByClassName(
-      'x6-graph-scroller',
-    )[0] as HTMLElement
     const config: CreateEditorArgs = {
       namespace: 'x6',
       onError: console.error,
@@ -67,40 +68,78 @@ export class NodeEditor extends Basecoat {
     }
 
     this.editor = createEditor(config)
+
     if (this.editor) {
       mergeRegister(
+        this.editor.registerCommand(
+          CAN_UNDO_COMMAND,
+          (payload) => {
+            this.onHistoryChange && payload && this.onHistoryChange(this.editor)
+            return false
+          },
+          COMMAND_PRIORITY_EDITOR,
+        ),
+        this.editor.registerCommand(
+          FORMAT_ON_COMMAND,
+          (format: number) => {
+            const selection = $getSelection()
+            if (!$isRangeSelection(selection)) {
+              return false
+            }
+            selection.setFormat(format)
+            return true
+          },
+          COMMAND_PRIORITY_EDITOR,
+        ),
+        // this is included to stop native undo/redo of lexical - may need to update if implementing  mouse clicks to undo/redo
+        this.editor.registerCommand(
+          KEY_DOWN_COMMAND,
+          (event: KeyboardEvent) => {
+            if (
+              (event.ctrlKey && event.key === 'z') ||
+              (event.ctrlKey && event.key === 'y')
+            )
+              return true
+            return false
+          },
+          COMMAND_PRIORITY_EDITOR,
+        ),
         registerRichText(this.editor),
         registerCheckList(this.editor),
         registerList(this.editor),
       )
-    }
-    this.editor?.setRootElement(this.nodeTextDiv)
-    this.editor.update(() => {
-      const paragraph = $createParagraphNode()
-      $getRoot().append(paragraph)
-      $getRoot().selectEnd()
-    })
 
-    this.removeUpdateListener = this.editor.registerUpdateListener(() => {
-      this.onUpdate && this.onUpdate(this.node.id, this.editor)
-      this.updateNodeEditorTransform()
-      if (this.scrollElement?.onscroll === null) {
-        this.scrollElement.onscroll = () => {
-          if (this.scrollLeft && this.scrollTop)
-            this.scrollElement?.scrollTo(this.scrollLeft, this.scrollTop)
-        }
+      this.editor.setRootElement(this.nodeTextDiv)
+      this.editor.update(
+        () => {
+          const paragraph = $createParagraphNode()
+          $getRoot().append(paragraph)
+          paragraph.select()
+        },
+        { tag: 'history-merge' },
+      )
+
+      this.removeUpdateListener = this.editor.registerUpdateListener(() => {
+        this.onUpdate && this.onUpdate(this.node.id, this.editor)
+        this.updateNodeEditorTransform()
+      })
+
+      this.editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')
+
+      if (nodeText) {
+        this.editor.setEditorState(this.editor.parseEditorState(nodeText))
       }
-    })
 
-    this.editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, 'center')
+      this.nodeTextDiv.addEventListener('blur', this.onBlur)
+      this.nodeTextDiv.addEventListener('focus', this.onFocus)
+      this.onCreate && this.onCreate(this.node.id, this.editor)
 
-    if (nodeText) {
-      this.editor.setEditorState(this.editor.parseEditorState(nodeText))
+      this.cleanHistory = registerHistory(
+        this.editor,
+        createEmptyHistoryState(),
+        300,
+      )
     }
-
-    this.nodeTextDiv.addEventListener('blur', this.onBlur)
-    this.nodeTextDiv.addEventListener('focus', this.onFocus)
-    this.onCreate && this.onCreate(this.node.id, this.editor)
   }
 
   getState = () => {
@@ -119,22 +158,27 @@ export class NodeEditor extends Basecoat {
     const minWidth = 10
 
     const bbox = (this.node as unknown as Cell).getBBox()
-    const textBBox = this.nodeTextDiv.getBoundingClientRect()
     pos = bbox.topLeft
-    const maxWidth = bbox.width - 10
 
     const angle = (this.node as Node).getAngle()
-    const scale = graph.scale()
+    const maxWidth = bbox.width - 10
 
     const { style } = this.nodeTextDiv
-    pos = graph.localToGraph(pos)
-    style.left = `${pos.x + bbox.width / 2 - textBBox.width / 2}px`
-    style.top = `${pos.y + bbox.height / 2 - textBBox.height / 2}px`
-    style.transform = `scale(${scale.sx}, ${scale.sy}) `
     style.minWidth = `${minWidth}px`
     style.maxWidth = `${maxWidth}px`
     style.width = `${maxWidth}px`
     style.rotate = `${angle || 0}deg`
+
+    const scale = graph.scale()
+
+    pos = graph.localToGraph(pos)
+    style.left = `${
+      pos.x + ((bbox.width * scale.sx) / 2 - this.nodeTextDiv.offsetWidth / 2)
+    }px`
+    style.top = `${
+      pos.y + (bbox.height * scale.sy) / 2 - this.nodeTextDiv.offsetHeight / 2
+    }px`
+    style.transform = `scale(${scale.sx}, ${scale.sy}) `
   }
 
   onBlur = (e: FocusEvent): void => {
@@ -144,25 +188,12 @@ export class NodeEditor extends Basecoat {
       lexicalText: JSON.stringify(this.editor.getEditorState().toJSON()),
     }
     node.setData(lexicalData, { overwrite: true, silent: true })
-
-    if ((e.target as HTMLElement).id.startsWith('x6-text-container')) return
-    if (this.scrollElement) {
-      this.scrollElement.onscroll = null
-      this.scrollElement.removeEventListener('wheel', this.removeScrollBlock)
-    }
   }
 
   onFocus = (e: FocusEvent): void => {
-    if ((e.target as HTMLElement).id.startsWith('x6-text-container')) return
-    this.scrollTop = this.scrollElement?.scrollTop
-    this.scrollLeft = this.scrollElement?.scrollLeft
-    this.scrollElement?.addEventListener('wheel', this.removeScrollBlock)
-  }
-
-  removeScrollBlock = () => {
-    if (this.scrollElement) {
-      this.scrollElement.onscroll = null
-    }
+    const nodeId = (e.target as HTMLElement).id.replace('x6-text-', '')
+    const node = this.graph.getCellById(nodeId)
+    ;(this.graph as any).resetSelection(node)
   }
 
   remove(): this {
@@ -170,6 +201,7 @@ export class NodeEditor extends Basecoat {
       this.nodeTextDiv.removeEventListener('blur', this.onBlur)
       this.nodeTextDiv.removeEventListener('focus', this.onFocus)
       this.removeUpdateListener()
+      this.cleanHistory()
     }
     return this
   }
