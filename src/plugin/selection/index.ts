@@ -7,8 +7,9 @@ import {
   isModifierKeyMatch,
   type ModifierKey,
 } from '../../common'
+import { Point } from '../../geometry'
 import type { EventArgs, Graph, GraphPlugin } from '../../graph'
-import type { Cell } from '../../model'
+import type { Cell, Node } from '../../model'
 import {
   SelectionImpl,
   type SelectionImplAddOptions,
@@ -61,6 +62,7 @@ export class Selection
   private readonly options: SelectionOptions
   private movedMap = new WeakMap<Cell, boolean>()
   private unselectMap = new WeakMap<Cell, boolean>()
+  private padding = 10
 
   get rubberbandDisabled() {
     return this.options.enabled !== true || this.options.rubberband !== true
@@ -299,7 +301,15 @@ export class Selection
     return this
   }
 
-  getSelectedCells() {
+  getSelectedCells(includeChildren = false) {
+    if (includeChildren) {
+      const cellsWithChildren: Cell[] = []
+      this.cells.forEach((cell) => {
+        const children = cell.getDescendants()
+        cellsWithChildren.push(cell, ...children)
+      })
+      return cellsWithChildren
+    }
     return this.cells
   }
 
@@ -532,6 +542,149 @@ export class Selection
   protected setFilter(filter?: SelectionFilter) {
     this.selectionImpl.setFilter(filter)
     return this
+  }
+
+  // Group-aware selection methods
+  getRootNode(cell: Cell): Cell | null {
+    let parent = cell.getParent()
+    while (parent && parent.getParent()) {
+      parent = parent.getParent()
+    }
+    return parent
+  }
+
+  getRootsNodes(cells: Cell[]): Cell[] {
+    const roots: Cell[] = []
+    cells.forEach((cell) => {
+      const root = this.getRootNode(cell)
+      if (root && !roots.includes(root)) {
+        roots.push(root)
+      }
+    })
+    return roots
+  }
+
+  getRootGroupNodes(cells: Cell[]): Cell[] {
+    const roots = this.getRootsNodes(cells)
+    return roots.filter((cell) => cell.isNode() && cell.getChildCount() > 0)
+  }
+
+  groupCells(cells: Cell[]): void {
+    if (cells.length < 2) return
+
+    const rootCells = this.getRootsNodes(cells)
+    const bbox = this.graph.model.getCellsBBox(rootCells)
+
+    if (!bbox) return
+
+    const group = this.graph.addNode({
+      x: bbox.x - this.padding,
+      y: bbox.y - this.padding,
+      width: bbox.width + this.padding * 2,
+      height: bbox.height + this.padding * 2,
+      zIndex: -1,
+      attrs: {
+        body: {
+          fill: 'transparent',
+          stroke: '#ccc',
+          strokeWidth: 1,
+          strokeDasharray: '5 5',
+        },
+      },
+    })
+
+    rootCells.forEach((cell) => {
+      group.addChild(cell)
+    })
+  }
+
+  unGroupCells(cells: Cell[]): void {
+    const groupNodes = this.getRootGroupNodes(cells)
+
+    groupNodes.forEach((group) => {
+      const children = group.getChildren()
+      if (children) {
+        children.forEach((child) => {
+          group.removeChild(child)
+        })
+      }
+      group.remove()
+    })
+  }
+
+  updateGroupBounds(cell: Cell): void {
+    const root = this.graph.getRootNode(cell) || cell
+    if (!root) return
+
+    const rootChildren = root.getDescendants()
+    const rootCenter = root.getBBox()?.getCenter()
+
+    const newRootArray = [] as Cell[]
+
+    rootChildren.forEach((child) => {
+      if (root.isNode() && child.isNode() && rootCenter) {
+        const clone = child.clone()
+        const size = clone.getSize()
+        const position = clone.getPosition()
+        const center = clone.getBBox().getCenter()
+        center.rotate(root.getAngle(), rootCenter)
+        const dx = center.x - size.width / 2 - position.x
+        const dy = center.y - size.height / 2 - position.y
+        clone.setPosition(position.x + dx, position.y + dy)
+        clone.rotate(0, { absolute: true })
+
+        newRootArray.push(clone)
+      } else if (root.isNode() && child.isEdge() && rootCenter) {
+        const clone = child.clone()
+        const source = child.getSourceCell() ? null : clone.getSourcePoint()
+        const target = child.getTargetCell() ? null : clone.getTargetPoint()
+        const vertices = child.getVertices() || null
+        const sourcePoint = source ? new Point(source.x, source.y) : null
+        const targetPoint = target ? new Point(target.x, target.y) : null
+
+        let update = false
+
+        if (sourcePoint) {
+          sourcePoint.rotate(root.getAngle(), rootCenter)
+          update = true
+        }
+
+        if (targetPoint) {
+          targetPoint.rotate(root.getAngle(), rootCenter)
+          update = true
+        }
+
+        if (update) {
+          clone.setSource(sourcePoint ? sourcePoint.toJSON() : undefined)
+          clone.setTarget(targetPoint ? targetPoint.toJSON() : undefined)
+        }
+
+        if (vertices && vertices.length) {
+          const newVertices = vertices.map((vertex) => {
+            const point = new Point(vertex.x, vertex.y)
+            point.rotate(root.getAngle(), rootCenter)
+            return point
+          })
+          clone.setVertices(newVertices)
+        }
+
+        newRootArray.push(clone)
+      }
+    })
+
+    const rootbbox = this.graph.model.getCellsBBox(newRootArray)
+
+    if (rootbbox && root.isNode()) {
+      root.setSize(
+        rootbbox.width + this.padding * 2,
+        rootbbox.height + this.padding * 2,
+      )
+      root.setPosition(
+        rootbbox.x - this.padding,
+        rootbbox.y - this.padding,
+        { ignoreGroup: true },
+      )
+    }
   }
 
   @disposable()

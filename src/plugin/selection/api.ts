@@ -42,7 +42,13 @@ declare module '../../graph/graph' {
       cells?: Cell | string | (Cell | string)[],
       options?: SelectionSetOptions,
     ) => Graph
-    getSelectedCells: () => Cell[]
+    getSelectedCells: (includeChildren?: boolean) => Cell[]
+    getRootNode: (cell: Cell) => Cell | null
+    getRootsNodes: (cells: Cell[]) => Cell[]
+    getRootGroupNodes: (cells: Cell[]) => Cell[]
+    groupCells: (cells: Cell[]) => void
+    unGroupCells: (cells: Cell[]) => void
+    updateGroupBounds: (cell: Cell) => void
     getSelectedCellCount: () => number
     isSelected: (cell: Cell | string) => boolean
     select: (
@@ -275,10 +281,10 @@ Graph.prototype.resetSelection = function (
   return this
 }
 
-Graph.prototype.getSelectedCells = function () {
+Graph.prototype.getSelectedCells = function (includeChildren?: boolean) {
   const selection = this.getPlugin('selection') as Selection
   if (selection) {
-    return selection.getSelectedCells()
+    return selection.getSelectedCells(includeChildren)
   }
   return []
 }
@@ -319,4 +325,50 @@ Graph.prototype.unselect = function (
     selection.unselect(cells, options)
   }
   return this
+}
+
+// Group-aware selection methods
+Graph.prototype.getRootNode = function (cell: Cell) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    return selection.getRootNode(cell)
+  }
+  return null
+}
+
+Graph.prototype.getRootsNodes = function (cells: Cell[]) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    return selection.getRootsNodes(cells)
+  }
+  return []
+}
+
+Graph.prototype.getRootGroupNodes = function (cells: Cell[]) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    return selection.getRootGroupNodes(cells)
+  }
+  return []
+}
+
+Graph.prototype.groupCells = function (cells: Cell[]) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    selection.groupCells(cells)
+  }
+}
+
+Graph.prototype.unGroupCells = function (cells: Cell[]) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    selection.unGroupCells(cells)
+  }
+}
+
+Graph.prototype.updateGroupBounds = function (cell: Cell) {
+  const selection = this.getPlugin('selection') as Selection
+  if (selection) {
+    selection.updateGroupBounds(cell)
+  }
 }

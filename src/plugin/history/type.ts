@@ -73,6 +73,10 @@ export interface HistoryCommand {
   event?: HistoryModelEvents
   data: HistoryCreationData | HistoryChangingData
   options?: KeyValue
+  // Lexical integration support
+  undo?: (options?: KeyValue<any>) => History | null
+  redo?: (options?: KeyValue<any>) => History | null
+  addUndoStack?: boolean
 }
 
 export type HistoryCommands = HistoryCommand[] | HistoryCommand

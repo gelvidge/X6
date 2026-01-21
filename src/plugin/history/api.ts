@@ -1,7 +1,7 @@
 import type { KeyValue } from '../../common'
 import { Graph } from '../../graph'
 import type { History } from '.'
-import type { HistoryArgs, HistoryCommand } from './type'
+import type { HistoryArgs, HistoryCommand, HistoryCommands } from './type'
 
 declare module '../../graph/graph' {
   interface Graph {
@@ -18,6 +18,9 @@ declare module '../../graph/graph' {
     getUndoStackSize: () => number
     getRedoStackSize: () => number
     getUndoRemainSize: () => number
+    getUndoStack: () => HistoryCommands[]
+    getRedoStack: () => HistoryCommands[]
+    addUndo: (undoStack: HistoryCommands[]) => void
     cleanHistory: (options?: KeyValue) => Graph
   }
 }
@@ -132,4 +135,21 @@ Graph.prototype.getRedoStackSize = function () {
 Graph.prototype.getUndoRemainSize = function () {
   const history = this.getPlugin('history') as History
   return history.getUndoRemainSize()
+}
+
+Graph.prototype.getUndoStack = function () {
+  const history = this.getPlugin('history') as History
+  return history.getUndoStack()
+}
+
+Graph.prototype.getRedoStack = function () {
+  const history = this.getPlugin('history') as History
+  return history.getRedoStack()
+}
+
+Graph.prototype.addUndo = function (undoStack: HistoryCommands[]) {
+  const history = this.getPlugin('history') as History
+  if (history) {
+    history.addUndo(undoStack)
+  }
 }

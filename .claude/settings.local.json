@@ -10,7 +10,8 @@
       "Bash(pnpm install:*)",
       "Bash(pnpm run build:esm:*)",
       "Bash(find:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

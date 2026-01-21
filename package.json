@@ -8,6 +8,16 @@
   "jsdelivr": "dist/x6.min.js",
   "types": "lib/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./es/index.js",
+      "require": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    },
+    "./es/*": "./es/*",
+    "./lib/*": "./lib/*",
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist",
     "es",
@@ -29,7 +39,7 @@
     "prestart:examples": "node ./scripts/check-node-version.js",
     "start:examples": "pnpm run build:esm && cd examples && pnpm run start",
     "build:esm": "rimraf es && tsc --module esnext --target es6 --outDir ./es",
-    "build:cjs": "rimraf lib && tsc --module commonjs --target es6 --outDir ./lib",
+    "build:cjs": "rimraf lib && tsc --module commonjs --target es6 --outDir ./lib && echo {\\\"type\\\":\\\"commonjs\\\"} > lib/package.json",
     "build:umd": "rimraf dist && rollup -c && npm run size",
     "size": "limit-size",
     "build": "run-p -s build:*",
@@ -50,7 +60,6 @@
     "@lexical/rich-text": "latest",
     "@lexical/selection": "latest",
     "@lexical/utils": "latest",
-    "@mui/material": "^7.2.0",
     "@scena/ruler": "^0.20.0",
     "dom-align": "^1.12.4",
     "lexical": "latest",

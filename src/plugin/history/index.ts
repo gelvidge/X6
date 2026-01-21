@@ -104,7 +104,13 @@ export class History extends Basecoat<HistoryEventArgs> implements GraphPlugin {
   undo(options: KeyValue = {}) {
     if (!this.disabled) {
       const cmd = this.undoStack.pop()
-      if (cmd) {
+      if (cmd && !Array.isArray(cmd) && typeof cmd.undo !== 'undefined') {
+        // Custom undo method (for Lexical integration)
+        cmd.undo()
+        this.redoStack.push(cmd)
+        this.notify('undo', cmd, options)
+      } else if (cmd) {
+        // Standard undo
         this.revertCommand(cmd, options)
         this.redoStack.push(cmd)
         this.notify('undo', cmd, options)
@@ -116,7 +122,16 @@ export class History extends Basecoat<HistoryEventArgs> implements GraphPlugin {
   redo(options: KeyValue = {}) {
     if (!this.disabled) {
       const cmd = this.redoStack.pop()
-      if (cmd) {
+      if (cmd && !Array.isArray(cmd) && typeof cmd.redo !== 'undefined') {
+        // Custom redo method (for Lexical integration)
+        cmd.redo()
+        // Conditional push - Lexical handles its own undo stack
+        if (cmd.addUndoStack) {
+          this.undoStackPush(cmd)
+        }
+        this.notify('redo', cmd, options)
+      } else if (cmd) {
+        // Standard redo
         this.applyCommand(cmd, options)
         this.undoStackPush(cmd)
         this.notify('redo', cmd, options)
@@ -164,6 +179,18 @@ export class History extends Basecoat<HistoryEventArgs> implements GraphPlugin {
 
   canRedo() {
     return !this.disabled && this.redoStack.length > 0
+  }
+
+  getUndoStack() {
+    return this.undoStack
+  }
+
+  getRedoStack() {
+    return this.redoStack
+  }
+
+  addUndo(undoStack: HistoryCommands[]) {
+    this.undoStack = [...this.undoStack, ...undoStack]
   }
 
   clean(options: KeyValue = {}) {

@@ -139,7 +139,14 @@ export class Scheduler extends Disposable {
     viewItem.flag = flag
     viewItem.options = options
 
-    const priorAction = view.hasAction(flag, ['translate', 'resize', 'rotate'])
+    const priorAction = view.hasAction(flag, [
+      // 'source',
+      // 'target',
+      'translate',
+      'resize',
+      'rotate',
+    ])
+
     if (priorAction || options.async === false) {
       priority = JOB_PRIORITY.PRIOR // eslint-disable-line
       flush = false // eslint-disable-line

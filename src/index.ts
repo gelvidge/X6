@@ -1,12 +1,12 @@
-import * as Shape from './shape'
-export * from './registry'
+import * as Shape from './shape/index.js'
+export * from './registry/index.js'
 
-export * from './model'
-export * from './view'
-export * from './graph'
-export * from './config'
-export * from './plugin'
-export * from './common'
-export * from './geometry'
+export * from './model/index.js'
+export * from './view/index.js'
+export * from './graph/index.js'
+export * from './config/index.js'
+export * from './plugin/index.js'
+export * from './common/index.js'
+export * from './geometry/index.js'
 
 export { Shape }

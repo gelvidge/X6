@@ -78,6 +78,7 @@ export class CellEditor extends ToolItem<
     style.fontFamily = attrs.fontFamily
     style.color = attrs.color
     style.backgroundColor = attrs.backgroundColor
+    style.cursor = 'text'
 
     // set init value
     const text = this.getCellText() || ''
